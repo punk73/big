@@ -36,4 +36,14 @@ $api->version('v1', function (Router $api) {
             'message' => 'This is a simple example of item returned by your APIs. Everyone can see it.'
         ]);
     });
+
+    $api->group(['prefix' => 'models'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ModelController@index' );
+        $api->get('/all', 'App\\Api\\V1\\Controllers\\ModelController@all' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\ModelController@store' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ModelController@upload' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@delete' );
+        $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@show' );
+    });
 });

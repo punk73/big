@@ -19,7 +19,7 @@ class CreateTableModel extends Migration
             $table->string('pwbno', 35);
             $table->string('pwbname', 40);
             $table->string('process', 35);
-            $table->string('code'); //string, but increment from 0 to 99M
+            $table->string('code')->nullable(); //string, but increment from 0 to 99M
             $table->timestamps();
         });
     }
