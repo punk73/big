@@ -39,11 +39,27 @@ $api->version('v1', function (Router $api) {
 
     $api->group(['prefix' => 'models'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\ModelController@index' );
-        $api->get('/all', 'App\\Api\\V1\\Controllers\\ModelController@all' );
+        // $api->get('/all', 'App\\Api\\V1\\Controllers\\ModelController@all' );
         $api->post('/', 'App\\Api\\V1\\Controllers\\ModelController@store' );
         $api->post('/upload', 'App\\Api\\V1\\Controllers\\ModelController@upload' );
         $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@update' );
         $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@delete' );
         $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@show' );
     });
+
+    $api->group(['prefix' => 'schedules'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleController@index' );
+        // $api->get('/all', 'App\\Api\\V1\\Controllers\\ScheduleController@all' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\ScheduleController@store' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleController@upload' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@delete' );
+        $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@show' );
+    });    
+
+    $api->group(['prefix' => 'schedule_details'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
+        $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
+    }); 
+
 });

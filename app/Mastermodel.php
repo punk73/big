@@ -11,7 +11,6 @@ class Mastermodel extends Model
     	'name',
     	'pwbno',
     	'pwbname',
-    	'process',
-		'code'
+    	'process'
     ];
 }

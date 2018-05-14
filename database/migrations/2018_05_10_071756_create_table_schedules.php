@@ -15,35 +15,12 @@ class CreateTableSchedules extends Migration
     {
         Schema::create('schedules', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('line', 35 );
-            $table->string('prod_no', 35 );
-            $table->integer('start_serial' );
-            $table->integer('lot_size');
-            $table->string('code', 10 ); //cuman dipakai 8
-            $table->integer('seq_start');
-            $table->integer('seq_end');
-            $table->string('model', 35 ); //cuman dipakai 8
-            $table->string('pwbno', 35 ); //cuman dipakai 8
-            $table->string('pwbname', 35 ); //cuman dipakai 8
-            $table->string('process', 35 ); //cuman dipakai 8
-            $table->dateTimeTz('rev_date'); //date time with timez
-            $table->timestamps();
-        });
-
-        Schema::create('schedules_backups', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('line', 35 );
-            $table->string('prod_no', 35 );
-            $table->integer('start_serial' );
-            $table->integer('lot_size');
-            $table->string('code', 10 ); //cuman dipakai 8
-            $table->integer('seq_start');
-            $table->integer('seq_end');
-            $table->string('model', 35 ); //cuman dipakai 8
-            $table->string('pwbno', 35 ); //cuman dipakai 8
-            $table->string('pwbname', 35 ); //cuman dipakai 8
-            $table->string('process', 35 ); //cuman dipakai 8
-            $table->dateTimeTz('rev_date'); //date time with timez
+            $table->integer('is_processed')->default(0);
+            $table->integer('is_active')->default(1);
+            $table->date('effective_date');
+            $table->date('end_effective_date');
+            $table->date('release_date');
+            $table->integer('rev')->default(1);
             $table->timestamps();
         });
     }
@@ -56,7 +33,5 @@ class CreateTableSchedules extends Migration
     public function down()
     {
         Schema::dropIfExists('schedules');
-        Schema::dropIfExists('schedules_backups');
-
     }
 }
