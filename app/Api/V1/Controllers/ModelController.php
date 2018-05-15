@@ -95,7 +95,7 @@ class ModelController extends Controller
 
     		$file = $request->file('file');
     		$name = time() . '-' . $file->getClientOriginalName();
-    		$path = storage_path('documents');
+    		$path = storage_path('models');
     		
     		$file->move($path, $name); //pindah ke file server;
     		

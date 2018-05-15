@@ -149,21 +149,22 @@ class ScheduleController extends Controller
                     $prodNo = $importedCsv[$i]['prod_no'];
                     $startSerial = $importedCsv[$i]['start_serial'];
                     $lotSize = $importedCsv[$i]['lot_size'];
-
+                    $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['lot_size'] : 1 ;
                     // kalau belum ada buat, kalau udah ada, skip.
                     $masterModel = Mastermodel::firstOrNew([
                         'name'=> $model,
                         'pwbno'=> $pwbNo,
                         'pwbname'=> $pwbName,
-                        'process' => $process
+                        'process' => $process,
+                        'cavity' => $cavity
                     ]);
                     
                     if (!isset($masterModel->id)) { //kalau belum ada, di save dulu. kalau udah, gausah.
                         $masterModel->save();
                     }
                     // dechex untuk import decimal ke hexa.
-                    //str_pad untuk kasih 0 di depan.
-                    $masterModel->code = str_pad( dechex($masterModel->id) , 8, '0', STR_PAD_LEFT );
+                    //str_pad untuk kasih 0 di depan. // "i" adalah code country untuk indonesia //dan dua digit terakhir adalah cavity dalam decimal. kalau cavity 1 maka "01"
+                    $masterModel->code = str_pad( dechex($masterModel->id) , 5, '0', STR_PAD_LEFT ) . 'i' . str_pad( $cavity , 2, '0', STR_PAD_LEFT )  ;
                     $masterModel->save();
 
                     // input ke model_details
@@ -182,6 +183,7 @@ class ScheduleController extends Controller
                     $scheduleDetail = new ScheduleDetail;
                     $scheduleDetail->schedule_id = $schedule->id;
                     $scheduleDetail->line = $line;
+                    $scheduleDetail->cavity = $cavity;
                     $scheduleDetail->model = $model;
                     $scheduleDetail->pwbno = $pwbNo;
                     $scheduleDetail->pwbname = $pwbName;

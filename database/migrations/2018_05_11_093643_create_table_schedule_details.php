@@ -22,6 +22,7 @@ class CreateTableScheduleDetails extends Migration
             $table->integer('seq_start')->nullable();
             $table->integer('seq_end')->nullable();
             $table->integer('lot_size')->nullable();
+            $table->integer('cavity')->default(1);
             $table->string('line', 35 );
             $table->integer('start_serial' );
             $table->string('prod_no', 35 );
@@ -40,6 +41,7 @@ class CreateTableScheduleDetails extends Migration
             $table->integer('seq_start')->nullable();
             $table->integer('seq_end')->nullable();
             $table->integer('lot_size')->nullable();
+            $table->integer('cavity')->default(1);
             $table->string('line', 35 );
             $table->integer('start_serial' );
             $table->string('prod_no', 35 );

@@ -21,11 +21,13 @@ class ScheduleDetailController extends Controller
             'schedule_details.seq_end',
             'schedule_details.line',
             'schedule_details.start_serial',
-
+            'schedule_details.prod_no',
+            'schedule_details.rev_date',
 
             'models.code as model_code',
             'models.name as model_name',
             'models.pwbname',
+            'models.cavity',
             'models.pwbno',
             'models.process',
 
@@ -60,6 +62,7 @@ class ScheduleDetailController extends Controller
             'schedule_details.prod_no as prod_no',
             'schedule_details.start_serial',
 
+            'models.cavity as cavity',
             'models.id as model_id',
             'models.code as model_code',
             'models.name as model_name',
@@ -70,6 +73,7 @@ class ScheduleDetailController extends Controller
             'model_details.id as model_detail_id',
             'model_details.code as detail_code',
         ]);     
+        
         $models = $models->get();
 
         foreach ($models as $key => $model) {
@@ -91,11 +95,6 @@ class ScheduleDetailController extends Controller
                     $modelDetail->code = str_pad( 1 , 4, '0', STR_PAD_LEFT );
                     $modelDetail->save();
 
-                    /*if ($model->seq_start ==null) {
-                        $model->seq_start = $model->start_serial;
-                        $model->seq_end = $model->start_serial + $model->lot_size;
-                        $model->save();
-                    }*/
                 }else{ //selain itu kesini
 
                     // disini harusnya di cek dulu start_serialnya sama atau engga. 
@@ -107,19 +106,25 @@ class ScheduleDetailController extends Controller
                         $newModelDetail->start_serial = $model->start_serial; //ini selalu ambil dari schedule
                         $newModelDetail->code = str_pad( $newModelDetail->counter , 4, '0', STR_PAD_LEFT );
                         $newModelDetail->save();
-                        
+                    }
+
+                    // cek modelDetail sudah punya code belum. kalau belum, ya isi.
+                    if ($modelDetail->code == null) {
+                        $modelDetail->start_serial = $model->start_serial; //ini selalu ambil dari schedule
+                        $modelDetail->code = str_pad( $newModelDetail->counter , 4, '0', STR_PAD_LEFT );
+                        $modelDetail->save(); 
+
                     }
                 }
 
                 if ($model->seq_start ==null) {
+                    // return $model;
                     $schedule_details = ScheduleDetail::find($model->id);
                     $schedule_details->seq_start = $model->start_serial;
                     $schedule_details->seq_end = $model->start_serial + $model->lot_size;
                     $schedule_details->save();
                 }
-            }
-
-            
+            }            
         }
 
         return [
