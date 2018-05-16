@@ -25,7 +25,7 @@ class ScheduleDetailController extends Controller
             'schedule_details.rev_date',
 
             'models.code as model_code',
-            'models.name as model_name',
+            'models.name as model',
             'models.pwbname',
             'models.cavity',
             'models.pwbno',
@@ -39,6 +39,59 @@ class ScheduleDetailController extends Controller
             $join->on('model_details.prod_no', '=', 'schedule_details.prod_no');
 
         });    	
+
+        /*Search Query*/
+            if ($request->name != null && $request->name != '' ) {
+                # code...
+                $models = $models->where('name','like','%'.$request->name.'%');
+            }
+
+            if ($request->pwbno != null && $request->pwbno != '' ) {
+                # code...
+                $models = $models->where('models.pwbno','like','%'.$request->pwbno.'%');
+            }
+
+            if ($request->pwbname != null && $request->pwbname != '' ) {
+                # code...
+                $models = $models->where('models.pwbname','like','%'.$request->pwbname.'%');
+            }
+
+            if ($request->process != null && $request->process != '' ) {
+                # code...
+                $models = $models->where('models.process','like','%'.$request->process.'%');
+            }
+
+            if ($request->code != null && $request->code != '' ) {
+                # code...
+                $models = $models->where('schedule_details.code','like','%'.$request->code.'%');
+            }
+
+            if ($request->lot_size != null && $request->lot_size != '' ) {
+                # code...
+                $models = $models->where('lot_size','like','%'.$request->lot_size.'%');
+            }
+
+            if ($request->seq_start != null && $request->seq_start != '' ) {
+                # code...
+                $models = $models->where('seq_start','like','%'.$request->seq_start.'%');
+            }
+
+            if ($request->seq_end != null && $request->seq_end != '' ) {
+                # code...
+                $models = $models->where('seq_end','like','%'.$request->seq_end.'%');
+            }
+
+            if ($request->line != null && $request->line != '' ) {
+                # code...
+                $models = $models->where('line','like','%'.$request->line.'%');
+            }
+
+            if ($request->rev_date != null && $request->rev_date != '' ) {
+                # code...
+                $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
+            }
+        /*End Search*/
+
     	$models = $models->paginate($limit);
     	return $models;
     }
@@ -65,7 +118,7 @@ class ScheduleDetailController extends Controller
             'models.cavity as cavity',
             'models.id as model_id',
             'models.code as model_code',
-            'models.name as model_name',
+            'models.name as model',
             'models.pwbname',
             'models.pwbno',
             'models.process',
@@ -73,11 +126,11 @@ class ScheduleDetailController extends Controller
             'model_details.id as model_detail_id',
             'model_details.code as detail_code',
         ]);     
-        
+
         $models = $models->get();
 
         foreach ($models as $key => $model) {
-            if ($model->detail_code == null) {
+            if ($model->code == null) {
                 // input ke model_details
                 $modelDetail = modelDetail::firstOrNew([
                     'model_id' => $model->model_id ,
@@ -122,6 +175,7 @@ class ScheduleDetailController extends Controller
                     $schedule_details = ScheduleDetail::find($model->id);
                     $schedule_details->seq_start = $model->start_serial;
                     $schedule_details->seq_end = $model->start_serial + $model->lot_size;
+                    $schedule_details->code = $model->model_code . $model->detail_code;
                     $schedule_details->save();
                 }
             }            

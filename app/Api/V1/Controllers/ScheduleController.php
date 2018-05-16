@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller; //parent contoller
 use Illuminate\Http\Request;
 use App\Schedule;
 use App\ScheduleDetail;
+use App\ScheduleHistory;
 use App\Mastermodel;
 use App\modelDetail;
 
@@ -12,8 +13,14 @@ class ScheduleController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	$models = Schedule::select();    	
-    	$models = $models->paginate($limit);
+    	$models = Schedule::select();
+        /*Search Query*/
+            if ($request->release_date != null && $request->release_date != '' ) {
+                # code...
+                $models = $models->where('release_date','=', $request->release_date );
+            }
+        /*End Search Query*/    	
+    	$models = $models->orderBy('rev', 'desc')->get(); //->paginate($limit);
     	return $models;
     }
 
@@ -57,6 +64,7 @@ class ScheduleController extends Controller
     			'message' => 'OK',
                 'upload_status' => $uploadStatus
     		],
+            'success' => true,
     		'data'=> $model
     	];
     }
@@ -194,6 +202,19 @@ class ScheduleController extends Controller
                     $scheduleDetail->rev_date = date('Y-m-d'); //$revDate;
                     $scheduleDetail->save();
 
+                    $ScheduleHistory = new ScheduleHistory;
+                    $ScheduleHistory->schedule_id = $schedule->id;
+                    $ScheduleHistory->line = $line;
+                    $ScheduleHistory->cavity = $cavity;
+                    $ScheduleHistory->model = $model;
+                    $ScheduleHistory->pwbno = $pwbNo;
+                    $ScheduleHistory->pwbname = $pwbName;
+                    $ScheduleHistory->process = $process;
+                    $ScheduleHistory->prod_no = $prodNo;
+                    $ScheduleHistory->start_serial = $startSerial;
+                    $ScheduleHistory->lot_size = $lotSize;
+                    $ScheduleHistory->rev_date = date('Y-m-d'); //$revDate;
+                    $ScheduleHistory->save();
 			    }
     		}
 

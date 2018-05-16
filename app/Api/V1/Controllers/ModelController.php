@@ -10,6 +10,32 @@ class ModelController extends Controller
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
     	$models = Mastermodel::select();    	
+        /*Search Query*/
+            if ($request->name != null && $request->name != '' ) {
+                # code...
+                $models = $models->where('name','like','%'.$request->name.'%');
+            }
+
+            if ($request->pwbno != null && $request->pwbno != '' ) {
+                # code...
+                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
+            }
+
+            if ($request->pwbno != null && $request->pwbno != '' ) {
+                # code...
+                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
+            }
+
+            if ($request->process != null && $request->process != '' ) {
+                # code...
+                $models = $models->where('process','like','%'.$request->process.'%');
+            }
+
+            if ($request->code != null && $request->code != '' ) {
+                # code...
+                $models = $models->where('code','like','%'.$request->code.'%');
+            }
+        /*End Search*/
     	$models = $models->paginate($limit);
     	return $models;
     }
@@ -88,7 +114,8 @@ class ModelController extends Controller
     	 	# kalau bukan csv, return false;
     	 	if ($request->file('file')->getClientOriginalExtension() != 'csv' ) {
     	 		return [
-    	 			'message' => 'you need to upload csv file!',
+                    'success' => false,
+                    'message' => 'you need to upload csv file!',
     	 			'data' => $request->file('file')->getClientOriginalExtension()
     	 		];
     	 	}
@@ -107,18 +134,56 @@ class ModelController extends Controller
 	    		for ($i = 0; $i < count($importedCsv); $i ++)
 			    {
 			    	// first parameter is data to check, second is data to input
-			        Mastermodel::firstOrCreate($importedCsv[$i], $importedCsv[$i] );
+                    $name = $importedCsv[$i]['name'];
+                    $pwbno = $importedCsv[$i]['pwbno'];
+                    $pwbname = $importedCsv[$i]['pwbname'];
+                    $process = $importedCsv[$i]['process'];
+
+			        Mastermodel::firstOrCreate([
+                        'name' => $name,
+                        'pwbno' => $pwbno,
+                        'pwbname' => $pwbname,
+                        'process' => $process,
+                    ], [
+                        'name' => $name,
+                        'pwbno' => $pwbno,
+                        'pwbname' => $pwbname,
+                        'process' => $process,
+                    ]);
 			    }
     		}
 
 		    return [
+                'success' => true,
 				'message' => 'Good!!'
 			];
     	}
 
     	return [
+            'success' => false,
     		'message' => 'no file found'
     	];
+    }
+
+    public function process (){
+        $models = Mastermodel::select()->where('code', '=', null )->get();
+        foreach ($models as $key => $model) {
+            if ($model->code == null) {
+                $masterModel = Mastermodel::find($model->id);
+                if ($masterModel != null) {
+                    # code...
+                    $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT ) . 'i' . str_pad( $model->cavity , 2, '0', STR_PAD_LEFT );
+                    $masterModel->code = $code;
+                    $masterModel->save();
+                }
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Code Generated!'
+        ];
+
     }
 
     public function getParameter(Request $request){

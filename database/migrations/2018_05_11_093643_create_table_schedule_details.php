@@ -18,7 +18,7 @@ class CreateTableScheduleDetails extends Migration
         Schema::create('schedule_details', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('schedule_id');
-            $table->string('code', 10 )->nullable(); //cuman dipakai 8
+            $table->string('code', 25 )->nullable(); //cuman dipakai 8
             $table->integer('seq_start')->nullable();
             $table->integer('seq_end')->nullable();
             $table->integer('lot_size')->nullable();

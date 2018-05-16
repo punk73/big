@@ -42,6 +42,7 @@ $api->version('v1', function (Router $api) {
         // $api->get('/all', 'App\\Api\\V1\\Controllers\\ModelController@all' );
         $api->post('/', 'App\\Api\\V1\\Controllers\\ModelController@store' );
         $api->post('/upload', 'App\\Api\\V1\\Controllers\\ModelController@upload' );
+        $api->post('/process', 'App\\Api\\V1\\Controllers\\ModelController@process' );
         $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@update' );
         $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@delete' );
         $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@show' );
@@ -60,6 +61,11 @@ $api->version('v1', function (Router $api) {
     $api->group(['prefix' => 'schedule_details'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
         $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
-    }); 
+    });
+
+    $api->group(['prefix' => 'histories'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\HistoryController@index' );
+        // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
+    });
 
 });
