@@ -21,7 +21,10 @@ class ScheduleController extends Controller
             }
         /*End Search Query*/    	
     	$models = $models->orderBy('rev', 'desc')->get(); //->paginate($limit);
-    	return $models;
+    	return [
+            'count' => count($models),
+            'data'=>    $models
+        ];
     }
 
     public function store(Request $request){
