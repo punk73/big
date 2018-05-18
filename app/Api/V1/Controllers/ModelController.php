@@ -4,12 +4,27 @@ namespace App\Api\V1\Controllers;
 use App\Http\Controllers\Controller; //parent contoller
 use Illuminate\Http\Request;
 use App\Mastermodel;
+use DB;
 
 class ModelController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	$models = Mastermodel::select();    	
+    	$models = Mastermodel::select([
+            'models.id',
+            'name',
+            'pwbno',
+            'pwbname',
+            'process',
+            'cavity',
+            DB::raw('concat(models.code , model_details.code) as code'),
+            'side',
+            'model_id',
+            'counter',
+            'start_serial',
+            'prod_no',
+        ])
+        ->join('model_details', 'models.id', '=', 'model_details.model_id');    	
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
                 # code...
