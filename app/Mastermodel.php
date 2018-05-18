@@ -13,5 +13,7 @@ class Mastermodel extends Model
     	'pwbname',
     	'process',
     	'cavity',
+    	'side',
+
     ];
 }

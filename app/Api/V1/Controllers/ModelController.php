@@ -192,6 +192,8 @@ class ModelController extends Controller
     		'pwbname',
     		'pwbno',
     		'process',
+            'cavity',
+            'side',
     		'code'
     	);
     }

@@ -21,6 +21,8 @@ class CreateTableModel extends Migration
             $table->string('process', 35);
             $table->integer('cavity')->default(1);
             $table->string('code')->nullable(); //string, but increment from 0 to 99M
+            $table->string('side')->nullable(); //string, but increment from 0 to 99M
+            
             $table->timestamps();
         });
     }
