@@ -17,7 +17,8 @@ class ModelController extends Controller
             'pwbname',
             'process',
             'cavity',
-            DB::raw('concat(models.code , model_details.code) as code'),
+            // DB::raw('concat(models.code , model_details.code) as code'),
+            'models.code',
             'side',
             'model_id',
             'counter',
@@ -36,9 +37,9 @@ class ModelController extends Controller
                 $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
             }
 
-            if ($request->pwbno != null && $request->pwbno != '' ) {
+            if ($request->pwbname != null && $request->pwbname != '' ) {
                 # code...
-                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
+                $models = $models->where('pwbname','like','%'.$request->pwbname.'%');
             }
 
             if ($request->process != null && $request->process != '' ) {
@@ -46,9 +47,20 @@ class ModelController extends Controller
                 $models = $models->where('process','like','%'.$request->process.'%');
             }
 
+            if ($request->cavity != null && $request->cavity != '' ) {
+                # code...
+                $models = $models->where('cavity','like','%'.$request->cavity.'%');
+            }
+
+            if ($request->side != null && $request->side != '' ) {
+                # code...
+                $models = $models->where('side','like','%'.$request->side.'%');
+            }
+
             if ($request->code != null && $request->code != '' ) {
                 # code...
-                $models = $models->where('code','like','%'.$request->code.'%');
+                $models = $models->where('models.code','like', $request->code.'%')
+                ->orWhere('model_details.code', 'like', $request->code .'%');
             }
         /*End Search*/
     	$models = $models->paginate($limit);
@@ -168,6 +180,7 @@ class ModelController extends Controller
                     ->where('pwbname',$pwbname)
                     ->where('process',$process)
                     ->exists();
+
                     if (!$masterModel) {
                         $modelThatDoesnExist[] = [
                             'name' => $name,
@@ -215,21 +228,47 @@ class ModelController extends Controller
     }
 
     public function process (){
-        $models = Mastermodel::select()->where('code', '=', null )->get();
-        foreach ($models as $key => $model) {
-            if ($model->code == null) {
-                $masterModel = Mastermodel::find($model->id);
-                if ($masterModel != null) {
-                    # code...
-                    $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT ) . 'i' . str_pad( $model->cavity , 2, '0', STR_PAD_LEFT );
-                    $masterModel->code = $code;
-                    $masterModel->save();
+        $time_start = microtime(true);
+        $generated = 0;
+        // &$generated = kita ambil outer scope variable, pass into the closure as reference,
+        // jadi yang kita edit di dalam closure adalah variable yang sama.
+        $models = Mastermodel::select()->where('code', '=', null )->chunk(100, function($models) use ($time_start, &$generated){
+            foreach ($models as $key => $model) {
+                if ($model->code == null) {
+                    $masterModel = Mastermodel::find($model->id);
+                    if ($masterModel != null) {
+                        // code ga di input di program ini
+                        $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT )/* . 'i' . str_pad( $model->cavity , 2, '0', STR_PAD_LEFT )*/;
+                        $masterModel->code = $code;
+                        $masterModel->save();
+                        $generated++;
+
+                    }
+                }
+
+                $end_time = microtime(true);
+
+                if (($time_start - $end_time) >= 25 ) {
+                    break;
                 }
             }
+        });
+
+        // jika models nge return false, maka proses didalem selesai
+        if (!$models) {
+            return [
+                'success' => true,
+                'remains' => $remains,
+                'generated' => $generated,
+                'message' => 'Code Generated!'
+            ];
         }
 
+        $remains = Mastermodel::select()->where('code', '=', null )->count();
         return [
             'success' => true,
+            'remains' => $remains,
+            'generated' => $generated,
             'message' => 'Code Generated!'
         ];
 

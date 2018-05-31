@@ -49,17 +49,17 @@ class ScheduleDetailController extends Controller
 
             if ($request->pwbno != null && $request->pwbno != '' ) {
                 # code...
-                $models = $models->where('models.pwbno','like','%'.$request->pwbno.'%');
+                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
             }
 
             if ($request->pwbname != null && $request->pwbname != '' ) {
                 # code...
-                $models = $models->where('models.pwbname','like','%'.$request->pwbname.'%');
+                $models = $models->where('pwbname','like', $request->pwbname.'%');
             }
 
             if ($request->process != null && $request->process != '' ) {
                 # code...
-                $models = $models->where('models.process','like','%'.$request->process.'%');
+                $models = $models->where('process','like','%'.$request->process.'%');
             }
 
             if ($request->code != null && $request->code != '' ) {
@@ -109,7 +109,8 @@ class ScheduleDetailController extends Controller
             'schedule_details.id as id',
             'schedule_details.schedule_id',
             'schedule_details.lot_size',
-            'schedule_details.code',
+            // 'schedule_details.code',
+            'schedule_details.qty',
             'schedule_details.seq_start',
             'schedule_details.seq_end',
             'schedule_details.line',
@@ -131,7 +132,8 @@ class ScheduleDetailController extends Controller
         $models = $models->get();
 
         foreach ($models as $key => $model) {
-            if ($model->code == null) {
+            // karena code dihapus, maka pengecekannya ke seq_start seq_end
+            if ($model->seq_start == null) {
                 // input ke model_details
                 $modelDetail = modelDetail::firstOrNew([
                     'model_id' => $model->model_id ,
@@ -175,8 +177,10 @@ class ScheduleDetailController extends Controller
                     // return $model;
                     $schedule_details = ScheduleDetail::find($model->id);
                     $schedule_details->seq_start = $model->start_serial;
-                    $schedule_details->seq_end = $model->start_serial + $model->lot_size;
-                    $schedule_details->code = $model->model_code . $model->detail_code;
+                    // seq end ganti, tidak lagi pakai lot, tapi pakai qty
+                    //seq end harusnya tidak dari start serial melain kan dari table baru.
+                    $schedule_details->seq_end = (int) $model->start_serial + (int) $model->qty;
+                    // $schedule_details->code = $model->model_code . $model->detail_code;
                     $schedule_details->save();
                 }
             }            

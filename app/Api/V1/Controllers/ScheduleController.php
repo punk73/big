@@ -179,7 +179,7 @@ class ScheduleController extends Controller
                     }
                     // dechex untuk import decimal ke hexa.
                     //str_pad untuk kasih 0 di depan. // "i" adalah code country untuk indonesia //dan dua digit terakhir adalah cavity dalam decimal. kalau cavity 1 maka "01"
-                    $masterModel->code = str_pad( dechex($masterModel->id) , 5, '0', STR_PAD_LEFT ) . 'I' . str_pad( $cavity , 2, '0', STR_PAD_LEFT )  ;
+                    $masterModel->code = str_pad( dechex($masterModel->id) , 5, '0', STR_PAD_LEFT ) /*. 'I' . str_pad( $cavity , 2, '0', STR_PAD_LEFT )*/  ;
                     $masterModel->save();
 
                     // input ke model_details
