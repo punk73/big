@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateTableCavities extends Migration
+class CreateTableDetails extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,13 @@ class CreateTableCavities extends Migration
      */
     public function up()
     {
-        Schema::create('cavities', function (Blueprint $table) {
+        Schema::create('details', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('model_detail_id');
-            $table->integer('cavity_no');
-            $table->integer('sequence_no');
+            $table->integer('start_serial');
+            $table->string('lot_size');
+            $table->integer('seq_start');
+            $table->integer('seq_end');
             $table->timestamps();
         });
     }
@@ -29,6 +31,6 @@ class CreateTableCavities extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cavities');
+        Schema::dropIfExists('details');
     }
 }

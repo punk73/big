@@ -125,14 +125,16 @@ class ScheduleController extends Controller
     	//get the
     	if ($request->hasFile('file')) {
 
-    	 	# kalau bukan csv, return false;
-    	 	if ($request->file('file')->getClientOriginalExtension() != 'csv' ) {
-    	 		return [
-    	 			'message' => 'you need to upload csv file!',
-    	 			'data' => $request->file('file')->getClientOriginalExtension()
-    	 		];
-                // return false;
-    	 	}
+    	 	# kalau bukan csv atau txt, return false;
+            $dataType = $request->file('file')->getClientOriginalExtension();
+    	 	if ($dataType == 'csv' || $dataType == 'txt' ) {
+                //yg boleh masuk csv & txt saja
+    	 	}else{
+                return [
+                    'message' => 'you need to upload csv file!',
+                    'data' => $request->file('file')->getClientOriginalExtension()
+                ];
+            }
 
     		$file = $request->file('file');
     		$name = time() . '-' . $file->getClientOriginalName();
@@ -143,7 +145,7 @@ class ScheduleController extends Controller
     		// return [$file, $path, $name ];
     		$fullname = $path .'\\'. $name ;
     		$importedCsv = $this->csvToArray($fullname);
-    		// return [$fullname, $importedCsv];
+    		// return [$fullname, $importedCsv, count($importedCsv)];
     		if ($importedCsv) { //kalau something wrong ini bakal bernilai false
                 
                 ScheduleDetail::truncate(); //truncate table schedules
@@ -160,7 +162,9 @@ class ScheduleController extends Controller
                     $prodNo = $importedCsv[$i]['prod_no'];
                     $startSerial = $importedCsv[$i]['start_serial'];
                     $lotSize = $importedCsv[$i]['lot_size'];
-                    $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['lot_size'] : 1 ;
+                    $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['lot_size'] : null ;
+                    // default value untuk qty adalah lot size
+                    $qty = (isset($importedCsv[$i]['qty'])) ? $importedCsv[$i]['qty'] : $lotSize ;
                     // kalau belum ada buat, kalau udah ada, skip.
                     $masterModel = Mastermodel::firstOrNew([
                         'name'=> $model,
@@ -175,7 +179,7 @@ class ScheduleController extends Controller
                     }
                     // dechex untuk import decimal ke hexa.
                     //str_pad untuk kasih 0 di depan. // "i" adalah code country untuk indonesia //dan dua digit terakhir adalah cavity dalam decimal. kalau cavity 1 maka "01"
-                    $masterModel->code = str_pad( dechex($masterModel->id) , 5, '0', STR_PAD_LEFT ) . 'i' . str_pad( $cavity , 2, '0', STR_PAD_LEFT )  ;
+                    $masterModel->code = str_pad( dechex($masterModel->id) , 5, '0', STR_PAD_LEFT ) . 'I' . str_pad( $cavity , 2, '0', STR_PAD_LEFT )  ;
                     $masterModel->save();
 
                     // input ke model_details
@@ -203,6 +207,8 @@ class ScheduleController extends Controller
                     $scheduleDetail->start_serial = $startSerial;
                     $scheduleDetail->lot_size = $lotSize;
                     $scheduleDetail->rev_date = date('Y-m-d'); //$revDate;
+                    $scheduleDetail->qty = $qty;
+                    
                     $scheduleDetail->save();
 
                     $ScheduleHistory = new ScheduleHistory;
@@ -217,6 +223,8 @@ class ScheduleController extends Controller
                     $ScheduleHistory->start_serial = $startSerial;
                     $ScheduleHistory->lot_size = $lotSize;
                     $ScheduleHistory->rev_date = date('Y-m-d'); //$revDate;
+                    $ScheduleHistory->qty = $qty;
+                    
                     $ScheduleHistory->save();
 			    }
     		}

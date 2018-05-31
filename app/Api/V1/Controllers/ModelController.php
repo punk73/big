@@ -7,7 +7,7 @@ use App\Mastermodel;
 use DB;
 
 class ModelController extends Controller
-{
+{   
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
     	$models = Mastermodel::select([
@@ -24,7 +24,7 @@ class ModelController extends Controller
             'start_serial',
             'prod_no',
         ])
-        ->join('model_details', 'models.id', '=', 'model_details.model_id');    	
+        ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');    	
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
                 # code...
@@ -124,16 +124,21 @@ class ModelController extends Controller
 
     public function upload(Request $request){
     	//get the
+        ini_set('max_execution_time', 300);
+        
     	if ($request->hasFile('file')) {
 
     	 	# kalau bukan csv, return false;
-    	 	if ($request->file('file')->getClientOriginalExtension() != 'csv' ) {
-    	 		return [
+            $fileType = $request->file('file')->getClientOriginalExtension();
+    	 	if ($fileType == 'txt' || $fileType == 'csv' ) {
+    	 		// kalau type file nya txt atau csv, lanjut.
+    	 	}else{
+                return [
                     'success' => false,
-                    'message' => 'you need to upload csv file!',
-    	 			'data' => $request->file('file')->getClientOriginalExtension()
-    	 		];
-    	 	}
+                    'message' => 'you need to upload txt file!',
+                    'data' => $request->file('file')->getClientOriginalExtension()
+                ];
+            }
 
     		$file = $request->file('file');
     		$name = time() . '-' . $file->getClientOriginalName();
@@ -146,6 +151,7 @@ class ModelController extends Controller
     		$importedCsv = $this->csvToArray($fullname);
     		// return [$fullname, $importedCsv];
     		if ($importedCsv) { //kalau something wrong ini bakal bernilai false
+                $modelThatDoesnExist = [];
 	    		for ($i = 0; $i < count($importedCsv); $i ++)
 			    {
 			    	// first parameter is data to check, second is data to input
@@ -153,8 +159,34 @@ class ModelController extends Controller
                     $pwbno = $importedCsv[$i]['pwbno'];
                     $pwbname = $importedCsv[$i]['pwbname'];
                     $process = $importedCsv[$i]['process'];
+                    $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['cavity'] : null ;
+                    $side = (isset($importedCsv[$i]['side'])) ? $importedCsv[$i]['side'] : null ;
+                    // cek apakah data sudah ada
+                    //kalau ada, lewat. kalau engga masukin ke array baru.
+                    $masterModel = Mastermodel::where('name',$name)
+                    ->where('pwbno',$pwbno)
+                    ->where('pwbname',$pwbname)
+                    ->where('process',$process)
+                    ->exists();
+                    if (!$masterModel) {
+                        $modelThatDoesnExist[] = [
+                            'name' => $name,
+                            'pwbno' => $pwbno,
+                            'pwbname' => $pwbname,
+                            'process' => $process,
+                            'cavity' =>$cavity,
+                            'side' =>$side,
+                        ];
+                    }
+                    //kalau array baru sudah 1000 index atau udah diujung, kirim ke db.
+                    if (count($modelThatDoesnExist) == 300  || $i == (count($importedCsv)-1) ) {
+                        Mastermodel::insert($modelThatDoesnExist);
+                        // reset temp array
+                        $modelThatDoesnExist = [];
+                    }
 
-			        Mastermodel::firstOrCreate([
+
+			        /*Mastermodel::firstOrCreate([
                         'name' => $name,
                         'pwbno' => $pwbno,
                         'pwbname' => $pwbname,
@@ -164,7 +196,9 @@ class ModelController extends Controller
                         'pwbno' => $pwbno,
                         'pwbname' => $pwbname,
                         'process' => $process,
-                    ]);
+                        'cavity' =>$cavity,
+                        'side' =>$side,
+                    ]);*/
 			    }
     		}
 

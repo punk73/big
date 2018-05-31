@@ -12,11 +12,11 @@ class ScheduleDetailController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	$models = ScheduleDetail::select([
+    	/*$models = ScheduleDetail::select([
             'schedule_details.id',
             'schedule_details.schedule_id',
             'schedule_details.lot_size',
-            'schedule_details.code',
+            // 'schedule_details.code', //we don't have this column anymore
             'schedule_details.seq_start',
             'schedule_details.seq_end',
             'schedule_details.line',
@@ -37,13 +37,14 @@ class ScheduleDetailController extends Controller
         ->leftJoin('model_details', function($join){
             $join->on('model_details.model_id', '=', 'models.id');
             $join->on('model_details.prod_no', '=', 'schedule_details.prod_no');
+        });*/
 
-        });    	
+        $models = ScheduleDetail::select();    	
 
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
                 # code...
-                $models = $models->where('name','like','%'.$request->name.'%');
+                $models = $models->where('model','like','%'.$request->name.'%');
             }
 
             if ($request->pwbno != null && $request->pwbno != '' ) {
