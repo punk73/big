@@ -227,51 +227,89 @@ class ModelController extends Controller
     	];
     }
 
-    public function process (){
+    public function process(){
+        ini_set('max_execution_time', 300); //in seconds
+        
         $time_start = microtime(true);
-        $generated = 0;
+        $generated = Mastermodel::select(['name','pwbname','pwbno'])
+        ->where('code', '!=', null) //berarti yg sudah di generate
+        ->groupBy('name')
+        ->groupBy('pwbname')
+        ->groupBy('pwbno')
+        ->get();
+        $generated = count($generated);
+        $counter = 0;
+        // return $generated;
         // &$generated = kita ambil outer scope variable, pass into the closure as reference,
         // jadi yang kita edit di dalam closure adalah variable yang sama.
-        $models = Mastermodel::select()->where('code', '=', null )->chunk(100, function($models) use ($time_start, &$generated){
+        $models = Mastermodel::select()->where('code', '=', null )
+        ->orderBy('id', 'asc')
+        /*->paginate(100);
+        return $models;*/
+        ->chunk(100, function($models) use ($time_start, &$generated, &$counter ){
             foreach ($models as $key => $model) {
                 if ($model->code == null) {
                     $masterModel = Mastermodel::find($model->id);
                     if ($masterModel != null) {
                         // code ga di input di program ini
-                        $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT )/* . 'i' . str_pad( $model->cavity , 2, '0', STR_PAD_LEFT )*/;
+                        // $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT );
+
+                        // get previous generated code
+                        $prevCode = Mastermodel::select(['code'])
+                        ->where('name', $model->name)
+                        ->where('pwbname', $model->pwbname)
+                        ->where('pwbno', $model->pwbno)
+                        ->first();
+
+                        // dengan begini akan banyak code yg terlewat, exp: 1,2,5,9 dst
+                        if ($prevCode->code != null) {
+                            $code = $prevCode->code;    
+                        }else{
+                            $generated++;
+                            $counter++;
+                            $code=str_pad( dechex($generated) , 5, '0', STR_PAD_LEFT );
+                        }
                         $masterModel->code = $code;
                         $masterModel->save();
-                        $generated++;
-
                     }
                 }
 
                 $end_time = microtime(true);
 
-                if (($time_start - $end_time) >= 25 ) {
-                    break;
+
+                if (($end_time - $time_start ) >= 290 ) {
+                    return false; //escape from chunk
                 }
             }
         });
 
         // jika models nge return false, maka proses didalem selesai
+        $end_time = microtime(true);
+        $remains = Mastermodel::select()->where('code', '=', null )->count();
         if (!$models) {
             return [
                 'success' => true,
                 'remains' => $remains,
                 'generated' => $generated,
+                'counter' => $counter,
+                'time' => ($end_time - $time_start ),
                 'message' => 'Code Generated!'
             ];
         }
 
-        $remains = Mastermodel::select()->where('code', '=', null )->count();
         return [
             'success' => true,
             'remains' => $remains,
             'generated' => $generated,
+            'counter' => $counter,
+            'time' => ($end_time - $time_start ),
             'message' => 'Code Generated!'
         ];
 
+    }
+
+    public function asdf(){
+        
     }
 
     public function getParameter(Request $request){
