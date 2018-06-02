@@ -228,29 +228,64 @@ class ModelController extends Controller
     }
 
     public function process (){
+        ini_set('max_execution_time', 180);
         $time_start = microtime(true);
         $generated = 0;
         // &$generated = kita ambil outer scope variable, pass into the closure as reference,
         // jadi yang kita edit di dalam closure adalah variable yang sama.
-        $models = Mastermodel::select()->where('code', '=', null )->chunk(100, function($models) use ($time_start, &$generated){
-            foreach ($models as $key => $model) {
-                if ($model->code == null) {
-                    $masterModel = Mastermodel::find($model->id);
-                    if ($masterModel != null) {
-                        // code ga di input di program ini
-                        $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT )/* . 'i' . str_pad( $model->cavity , 2, '0', STR_PAD_LEFT )*/;
-                        $masterModel->code = $code;
-                        $masterModel->save();
-                        $generated++;
+        $models = Mastermodel::select([
+            
+            'name',
+            'pwbname',
+            'pwbno',
+            DB::raw('min(code) as code'),
+            // jumlah row yg di group
+            DB::raw('count(*) as all_qty'),
+            // jmlah code yg tidak null
+            DB::raw('count(code) as generated_qty'),
 
-                    }
+        ])
+        ->where('code', null)
+        ->orderBy('name')
+        ->groupBy('name')
+        ->groupBy('pwbno')
+        ->groupBy('pwbname')
+        ->paginate();
+
+        return $models;
+        /*->chunk(100, function($models) use ($time_start, &$generated){
+            $counter = 1;
+            $models->filter(function($model, $key){
+                // dibawah ini jika return true, maka tidak kena filter
+                return $model->all_qty !=  $model->generated_qty; 
+                // jika all_qty == generated_qty artinya semua sudah di generate
+            });
+
+            foreach ($models as $key => $model) {
+                //ada yang belum di generate
+                if ($model->all_qty != $model->generated_qty) {
+                    // jika model belum ada, generate id,
+                    $model->id = $counter++; //ini awalnya 0
+                    //else gausah.
+                    
+                    $code = ($model->code!=null) ? $model->code : str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT ) ;
+                    // update
+                    $masterModel = Mastermodel::
+                    where('name', $model->name)
+                    ->where('pwbname', $model->pwbname)
+                    ->where('pwbno', $model->pwbno)
+                    // ->where('code', null )
+                    ->update(['code' => $code ]);
+                    $generated++;
                 }
 
                 $end_time = microtime(true);
 
                 if (($time_start - $end_time) >= 25 ) {
-                    break;
+                    return false;
+                    // break;
                 }
+
             }
         });
 
@@ -270,7 +305,7 @@ class ModelController extends Controller
             'remains' => $remains,
             'generated' => $generated,
             'message' => 'Code Generated!'
-        ];
+        ];*/
 
     }
 
