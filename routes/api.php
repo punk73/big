@@ -61,6 +61,8 @@ $api->version('v1', function (Router $api) {
     $api->group(['prefix' => 'schedule_details'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
         $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@upload' );
+
     });
 
     $api->group(['prefix' => 'histories'], function(Router $api){

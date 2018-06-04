@@ -7,6 +7,7 @@ use App\Schedule;
 use App\ScheduleDetail;
 use App\Mastermodel;
 use App\modelDetail;
+use App\Api\V1\Controllers\CsvController;
 
 class ScheduleDetailController extends Controller
 {
@@ -189,6 +190,80 @@ class ScheduleDetailController extends Controller
         return [
             'count' => count($models),
             'data' => $models
+        ];
+    }
+
+    public function upload(Request $request){
+        if ($request->hasFile('file')) {
+
+            # kalau bukan csv atau txt, return false;
+            $dataType = $request->file('file')->getClientOriginalExtension();
+            if ($dataType == 'csv' || $dataType == 'txt' ) {
+                //yg boleh masuk csv & txt saja
+            }else{
+                return [
+                    'message' => 'you need to upload csv file!',
+                    'data' => $request->file('file')->getClientOriginalExtension()
+                ];
+            }
+
+            $file = $request->file('file');
+            $name = time() . '-' . $file->getClientOriginalName();
+            $path = storage_path('schedules');
+            
+            $file->move($path, $name); //pindah ke file server;
+            
+            // return [$file, $path, $name ];
+            $fullname = $path .'\\'. $name ;
+            $csv = new CsvController;
+            $importedCsv = $csv->csvToArray($fullname);
+            // return [$fullname, $importedCsv, count($importedCsv)];
+            if ($importedCsv) { //kalau something wrong ini bakal bernilai false
+                
+                ScheduleDetail::truncate(); //truncate table schedules
+                
+                $newSchedule = [];
+                for ($i = 0; $i < count($importedCsv); $i ++)
+                {
+                    // first parameter is data to check, second is data to input
+                    // it'll be deleted soon;
+                    $line = $importedCsv[$i]['line'];
+                    $model = $importedCsv[$i]['model'];
+                    $pwbNo = $importedCsv[$i]['pwbno'];
+                    $pwbName = $importedCsv[$i]['pwbname'];
+                    $process = $importedCsv[$i]['process'];
+                    $prodNo = $importedCsv[$i]['prod_no'];
+                    $startSerial = $importedCsv[$i]['start_serial'];
+                    $lotSize = $importedCsv[$i]['lot_size'];
+                    $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['lot_size'] : null ;
+                    $qty = (isset($importedCsv[$i]['qty'])) ? (int) $importedCsv[$i]['qty'] : $lotSize ;
+                    
+                    // add rev date;
+                    $importedCsv[$i]['rev_date'] = date('Y-m-d');
+                    // return $importedCsv[$i];
+                    unset( $importedCsv[$i]['Plan date']);
+                    // return $importedCsv[$i];
+                    $newSchedule[]=$importedCsv[$i];
+                    if (count($newSchedule) == 5 || $i == (count($importedCsv)-1) ) {
+                        
+                        //insert into db
+                        ScheduleDetail::insert($newSchedule);
+                        // tiap 5, input database.
+                        $newSchedule = []; //reset array
+                    }
+                }
+
+
+            }
+
+            return [
+                'message' => 'Good!!'
+            ];
+            // return true;
+        }
+
+        return [
+            'message' => 'no file found'
         ];
     }
 
