@@ -20,6 +20,7 @@ class CreateTableDetails extends Migration
             $table->string('lot_size');
             $table->integer('seq_start');
             $table->integer('seq_end');
+            $table->integer('qty');            
             $table->timestamps();
         });
     }

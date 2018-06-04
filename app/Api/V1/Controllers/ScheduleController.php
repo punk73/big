@@ -28,8 +28,12 @@ class ScheduleController extends Controller
     }
 
     public function store(Request $request){
-    	$parameters = $this->getParameter($request);
-    	// return $parameters;
+        try { 
+    	   $parameters = $this->getParameter($request);
+        } catch (Exception $e) {
+            $e->getMessage();
+        }
+    	
     	$model = Schedule::firstOrNew([
             'release_date'=> $parameters['release_date']
         ], $parameters );
@@ -60,13 +64,10 @@ class ScheduleController extends Controller
     	   $model->save();
         }
     	
-        $uploadStatus = $this->upload($request, $model );
-
     	return [
     		'_meta' => [
     			'message' => 'OK',
-                'upload_status' => $uploadStatus
-    		],
+        	],
             'success' => true,
     		'data'=> $model
     	];
@@ -242,6 +243,7 @@ class ScheduleController extends Controller
     }
 
     public function getParameter(Request $request){
+
     	return $request->only(
     		'release_date',
             'effective_date',
