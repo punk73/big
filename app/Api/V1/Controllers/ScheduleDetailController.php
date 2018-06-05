@@ -244,6 +244,8 @@ class ScheduleDetailController extends Controller
             $join->on('schedule_details.model', '=', 'models.name');
             $join->on('schedule_details.pwbname', '=', 'models.pwbname');
             $join->on('schedule_details.pwbno', '=', 'models.pwbno');
+            $join->on('schedule_details.process', '=', 'models.process');
+
         })
         ->leftJoin('model_details', function ($join){
             $join->on('models.id', '=', 'model_details.model_id');
@@ -254,7 +256,12 @@ class ScheduleDetailController extends Controller
             $join->on('schedule_details.start_serial','=','details.start_serial');
             $join->on('schedule_details.lot_size','=','details.lot_size');
             $join->on( 'schedule_details.qty','=', 'details.qty');
+            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
         })
+        ->where('schedule_details.seq_start', null )
+        ->where('schedule_details.qty', '>', 0 )
         // ->get();
         ->chunk(100, function ($schedules){
             // for each disini, isi table yg dibawah bawahnya.
@@ -265,41 +272,98 @@ class ScheduleDetailController extends Controller
                 $pwbno = $schedule->pwbno;
                 $pwbname = $schedule->pwbname;
                 $process = $schedule->process;
-                $cavity =  null;
-                $side = null;
 
                 $masterModel = Mastermodel::firstOrNew([
                     'name' => $name,
                     'pwbno' => $pwbno,
                     'pwbname' => $pwbname,
                     'process' => $process,
-                ], [
-                    'name' => $name,
-                    'pwbno' => $pwbno,
-                    'pwbname' => $pwbname,
-                    'process' => $process,
-                    'cavity' =>$cavity,
-                    'side' =>$side,
-                ]);    
+                ]);  
 
-                $masterModel->save();
+                if (!$masterModel->exists) {
+                    #kalau belum ada aja di save nya. gausah update.
+                    $masterModel->generateCode();
+                    $masterModel->save();
+                }
+
+                // update schedule 
+                if($masterModel->code != null){
+                    $schedule->model_code = $masterModel->code;
+                }
                 
                 // cek model details sudah ada apa belum
                 $modelDetail = modelDetail::firstOrNew([
                     'model_id'=> $masterModel->id,
                     'prod_no' => $schedule->prod_no 
                 ]);
-                $modelDetail->save();
+
+                if(!$modelDetail->exists ){
+                    //model detail is new, not exists before
+                    // codingnya ada di class model nya
+                    $modelDetail->generateCode( $masterModel->id );
+                    //save model details
+                    $modelDetail->save();
+                }
 
                 // cek details sudah ada belum.
-                /*$detail = Detail::firstOrNew([
+                $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
                     'model_detail_id' => $modelDetail->id,
                     'start_serial' => $schedule->start_serial,
                     'lot_size' => $schedule->lot_size,
-                    'qty' => $schedule->qty,
                 ]);
 
-                $detail->seq_start = $detail->*/
+                // cek apakah sudah ada sebelumnya, kalau ada, maka
+                if ($detail->seq_start == null) {
+                    # add new
+                    // kalau belum ada, ya tambah
+                    if ($schedule->qty != 0) {
+                        # code...
+                        $detail->qty = $schedule->qty;
+                        $detail->seq_start = $schedule->start_serial;
+                        $detail->seq_end = $schedule->start_serial + ($schedule->qty - 1); 
+
+                        $detail->save();
+
+                        // update value schedule
+                        $schedule->seq_start = $detail->seq_start;
+                        $schedule->seq_end = $detail->seq_end;
+                        // $schedule->save();
+                    }
+                }else {
+                    // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
+                    if ($schedule->qty != 0) {
+                        //yg masuk kesini, artinya yang schedulenya dipecah. satu prod number, tp schedule 
+                        //nya dipisah pisah. that's why seq start nya ambil dari seq end record sebelumnya.
+                        $newDetail = Detail::firstOrNew([
+                            'model_detail_id' => $modelDetail->id,
+                            'start_serial' => $schedule->start_serial,
+                            'lot_size' => $schedule->lot_size,
+                            'qty' => $schedule->qty,
+                            'seq_start' => $detail->seq_end,
+                            'seq_end' => $detail->seq_end + ($schedule->qty - 1)
+                        ]);
+
+                        $newDetail->save();
+
+                        // update value schedule
+                        $schedule->seq_start = $newDetail->seq_start;
+                        $schedule->seq_end = $newDetail->seq_end;
+                        
+                    }
+
+                }
+
+                // update every changes in schedule here.
+                if ($masterModel->code != null) {
+                    # code...
+                    $schedule->model_code = $masterModel->code;
+                }
+                //assign model_detail code into schedule;
+                if ($modelDetail->code!=null) {
+                    $schedule->prod_no_code = $modelDetail->code;
+                }
+
+                $schedule->save();
 
             }
         });
@@ -411,6 +475,9 @@ class ScheduleDetailController extends Controller
             $join->on('schedule_details.start_serial','=','details.start_serial');
             $join->on('schedule_details.lot_size','=','details.lot_size');
             $join->on( 'schedule_details.qty','=', 'details.qty');
+            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
         })
         ->where('models.code', '=', null ) //cek yang code nya masih null
         ->orWhere('model_details.code', null ) //cek yang prod_no code nya masih null
@@ -421,6 +488,17 @@ class ScheduleDetailController extends Controller
         return !$ungeneratedSchedule; //kalau ini berisi, artinya masih ada yang belum di generate
         //artinya harusnya ini return null, atau sudah tidak ada.
 
+    }
+
+    public function preprocess(){
+        $isGenerated = $this->isGenerated();
+
+        $message = ($isGenerated) ? 'Already Generated' : 'ready to process';
+
+        return [
+            'is_generated'=> $isGenerated,
+            'message'=> $message
+        ];
     }
 
     private function hasNoScheduleId(){
