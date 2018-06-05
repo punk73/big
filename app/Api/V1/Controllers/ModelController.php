@@ -21,8 +21,6 @@ class ModelController extends Controller
             'models.code',
             'side',
             'model_id',
-            'counter',
-            'start_serial',
             'prod_no',
         ])
         ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');    	
