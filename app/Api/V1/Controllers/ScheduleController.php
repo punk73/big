@@ -73,54 +73,21 @@ class ScheduleController extends Controller
     	];
     }
 
-    /*public function update(Request $request, $id ){
-    	$model = Schedule::find($id);
-    	
-    	if ($model == null) {
-    		return [
-	    		'_meta' => [
-	    			'message' => 'data not found!'
-	    		],
-	    		'data'=> $model
-	    	];
-    	}
+    public function dates(Request $request){
+        $dates = Schedule::select([
+            'release_date',
 
-    	$parameters = $this->getParameter($request);
-    
-    	foreach ($parameters as $key => $parameter) {
-    		$model->$key = (isset( $parameter) && $parameter != null ) ? $parameter : $model->$key ;
-    	}
+        ])
+        ->join('schedule_histories', 'schedules.id', '=', 'schedule_histories.schedule_id')
+        ->distinct()
+        ->get();
 
-    	$model->save();
 
-    	return [
-    		'_meta' => [
-    			'message' => 'OK'
-    		],
-    		'data'=> $model
-    	];
+        return [
+            'message' => 'OK',
+            'data' =>    $dates
+        ];
     }
-
-    public function delete(Request $request, $id){
-    	$model = Schedule::find($id);
-
-    	if ($model == null) {
-    		return [
-	    		'_meta' => [
-	    			'message' => 'data not found!'
-	    		],
-	    		'data'=> $model
-	    	];
-    	}
-
-    	$model->delete();
-
-    	return [
-    		'_meta' => [
-    			'message' => 'OK'
-    		]
-    	];
-    }*/
 
     public function upload(Request $request, Schedule $schedule ){
     	//get the
