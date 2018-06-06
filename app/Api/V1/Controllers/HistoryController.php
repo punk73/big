@@ -16,7 +16,7 @@ class HistoryController extends Controller
             'schedule_histories.id',
             'schedule_histories.schedule_id',
             'schedule_histories.lot_size',
-            'schedule_histories.code',
+            // 'schedule_histories.code',
             'schedule_histories.seq_start',
             'schedule_histories.seq_end',
             'schedule_histories.line',
@@ -33,11 +33,26 @@ class HistoryController extends Controller
 
             'model_details.code as detail_code',
         ])
-        ->leftJoin('models', 'schedule_histories.model', '=', 'models.name' )
+        ->leftJoin('models', function($join){
+            $join->on('schedule_histories.model', '=', 'models.name');
+            $join->on('schedule_histories.pwbno', '=', 'models.pwbno');
+            $join->on('schedule_histories.pwbname', '=', 'models.pwbname');
+            $join->on('schedule_histories.process', '=', 'models.process');
+
+        })
         ->leftJoin('model_details', function($join){
             $join->on('model_details.model_id', '=', 'models.id');
             $join->on('model_details.prod_no', '=', 'schedule_histories.prod_no');
 
+        })
+        ->leftJoin('details', function ($join){
+            $join->on('model_details.id','=','details.model_detail_id');
+            $join->on('schedule_histories.start_serial','=','details.start_serial');
+            $join->on('schedule_histories.lot_size','=','details.lot_size');
+            $join->on( 'schedule_histories.qty','=', 'details.qty');
+            $join->on( 'schedule_histories.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_histories.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_histories.seq_end','=', 'details.seq_end');
         });    	
 
         /*Search Query*/
