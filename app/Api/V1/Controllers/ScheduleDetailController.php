@@ -16,34 +16,7 @@ class ScheduleDetailController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	/*$models = ScheduleDetail::select([
-            'schedule_details.id',
-            'schedule_details.schedule_id',
-            'schedule_details.lot_size',
-            // 'schedule_details.code', //we don't have this column anymore
-            'schedule_details.seq_start',
-            'schedule_details.seq_end',
-            'schedule_details.line',
-            'schedule_details.start_serial',
-            'schedule_details.prod_no',
-            'schedule_details.rev_date',
-
-            'models.code as model_code',
-            'models.name as model',
-            'models.pwbname',
-            'models.cavity',
-            'models.pwbno',
-            'models.process',
-
-            'model_details.code as detail_code',
-        ])
-        ->leftJoin('models', 'schedule_details.model', '=', 'models.name' )
-        ->leftJoin('model_details', function($join){
-            $join->on('model_details.model_id', '=', 'models.id');
-            $join->on('model_details.prod_no', '=', 'schedule_details.prod_no');
-        });*/
-
-        $models = ScheduleDetail::select();    	
+        $models = $this->getJoinedSchedule();    	
 
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
@@ -64,11 +37,6 @@ class ScheduleDetailController extends Controller
             if ($request->process != null && $request->process != '' ) {
                 # code...
                 $models = $models->where('process','like','%'.$request->process.'%');
-            }
-
-            if ($request->code != null && $request->code != '' ) {
-                # code...
-                $models = $models->where('schedule_details.code','like','%'.$request->code.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
@@ -95,6 +63,62 @@ class ScheduleDetailController extends Controller
                 # code...
                 $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
             }
+
+            if ($request->code != null && $request->code != '' ) {
+                # code...
+                $code = $request->code;
+
+                //cek if code <= 5 character. search di model.code
+
+                // substr(string, start, length )
+                $modelCode = substr($code, 0, 5); //ambil dari index 0, sebanyak 5 karakter.
+                //char 6th must be i as country code
+                $countryCode = substr($code, 5, 1);
+                //7 must be A or B
+                $sideCode = substr($code, 6,2);
+                //char 8-9 cavity. if model  still has no cavity, then 
+                $cavityCode = substr($code, 7, 3);
+                //10-12 lot number
+                $lotNo = substr($code, 9, 3);
+                //13-15 seq number
+                $seqNo = substr($code, 12,3);
+
+                /*return [
+                    'model_code' => $modelCode,
+                    'country_code' => $countryCode,
+                    'side_code' => $sideCode,
+                    'cavity_code' => $cavityCode,
+                    'lot_no' => $lotNo,
+                    'seq_no' => $lotNo
+                ];*/
+
+                if ($modelCode) {
+                    $models = $models->where('model_code', 'like', $modelCode.'%' );
+                }
+
+                //country code diabaikan 
+
+                if ($sideCode) {
+                    $models = $models->where('models.side', 'like', $sideCode.'%' );
+                }
+
+                if ($cavityCode) {
+                    $models = $models->where('models.cavity', '<=', $cavityCode );
+                }
+
+                if ($lotNo) {
+                    // ambil dari property si table schedule_details
+                    $models = $models->where('prod_no_code', '<=', $lotNo );
+                }
+
+                if ($seqNo) {
+                    // ambil dari property si table schedule_details
+                    $models = $models
+                    ->where('details.seq_start', '>=', $seqNo )
+                    ->where('details.seq_end', '<=', $seqNo );
+                }                
+                // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
+            }            
         /*End Search*/
 
     	$models = $models->paginate($limit);
@@ -125,50 +149,7 @@ class ScheduleDetailController extends Controller
         }
         
         // generate code
-        $scheduleDetail = ScheduleDetail::select([
-            'schedule_details.*',
-
-            //models
-            'models.name as models_name',
-            'models.pwbname as models_pwbname',
-            'models.pwbno as models_pwbno',
-            'models.process as models_process',
-            'models.cavity as models_cavity',
-            'models.code as models_code',
-            
-
-            // model_details
-            'model_details.code as model_details_code',
-            'model_details.prod_no as model_details_prod_no',
-
-            // details
-            'details.start_serial as details_start_serial',
-            'details.lot_size as details_lot_size',
-            'details.seq_start as details_seq_start',
-            'details.seq_end as details_seq_end',
-            'details.qty as details_qty',
-
-        ])
-        ->leftJoin('models', function($join){
-            $join->on('schedule_details.model', '=', 'models.name');
-            $join->on('schedule_details.pwbname', '=', 'models.pwbname');
-            $join->on('schedule_details.pwbno', '=', 'models.pwbno');
-            $join->on('schedule_details.process', '=', 'models.process');
-
-        })
-        ->leftJoin('model_details', function ($join){
-            $join->on('models.id', '=', 'model_details.model_id');
-            $join->on('schedule_details.prod_no', '=', 'model_details.prod_no');
-        })
-        ->leftJoin('details', function ($join){
-            $join->on('model_details.id','=','details.model_detail_id');
-            $join->on('schedule_details.start_serial','=','details.start_serial');
-            $join->on('schedule_details.lot_size','=','details.lot_size');
-            $join->on( 'schedule_details.qty','=', 'details.qty');
-            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
-            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
-            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
-        })
+        $scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
         ->where('schedule_details.qty', '>', 0 )
         
@@ -403,34 +384,11 @@ class ScheduleDetailController extends Controller
     private function isGenerated(){
         // it'll return true or false, based on is there any schedule that has no code yet.
 
-        $ungeneratedSchedule = ScheduleDetail::select([
-            'schedule_details.*',
-            'models.code as code'
-        ])
-        ->leftJoin('models', function($join){
-            $join->on('schedule_details.model', '=', 'models.name');
-            $join->on('schedule_details.pwbname', '=', 'models.pwbname');
-            $join->on('schedule_details.pwbno', '=', 'models.pwbno');
-        })
-        ->leftJoin('model_details', function ($join){
-            $join->on('models.id', '=', 'model_details.model_id');
-            $join->on('schedule_details.prod_no', '=', 'model_details.prod_no');
-        })
-        ->leftJoin('details', function ($join){
-            $join->on('model_details.id','=','details.model_detail_id');
-            $join->on('schedule_details.start_serial','=','details.start_serial');
-            $join->on('schedule_details.lot_size','=','details.lot_size');
-            $join->on( 'schedule_details.qty','=', 'details.qty');
-            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
-            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
-            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
-        })
+        $ungeneratedSchedule = $this->getJoinedSchedule()
         ->where('models.code', '=', null ) //cek yang code nya masih null
         ->orWhere('model_details.code', null ) //cek yang prod_no code nya masih null
         ->orWhere('schedule_details.seq_start', null) //cek yg blm ada seq start & seq end nya.
         ->exists();
-
-
 
         return !$ungeneratedSchedule; //kalau ini berisi, artinya masih ada yang belum di generate
         //artinya harusnya ini return null, atau sudah tidak ada.
@@ -450,6 +408,55 @@ class ScheduleDetailController extends Controller
     // function ini dipakai di function process.
     private function hasNoScheduleId(){
         return ScheduleDetail::where('schedule_id','=', null )->exists();
+    }
+
+    private function getJoinedSchedule(){
+        $schedule = ScheduleDetail::select([
+            'schedule_details.*',
+
+            //models
+            'models.name as models_name',
+            'models.pwbname as models_pwbname',
+            'models.pwbno as models_pwbno',
+            'models.process as models_process',
+            'models.cavity as models_cavity',
+            'models.side as models_side',
+            'models.code as models_code',
+            
+
+            // model_details
+            'model_details.code as model_details_code',
+            'model_details.prod_no as model_details_prod_no',
+
+            // details
+            'details.start_serial as details_start_serial',
+            'details.lot_size as details_lot_size',
+            'details.seq_start as details_seq_start',
+            'details.seq_end as details_seq_end',
+            'details.qty as details_qty',
+
+        ])
+        ->leftJoin('models', function($join){
+            $join->on('schedule_details.model', '=', 'models.name');
+            $join->on('schedule_details.pwbname', '=', 'models.pwbname');
+            $join->on('schedule_details.pwbno', '=', 'models.pwbno');
+            $join->on('schedule_details.process', '=', 'models.process');
+        })
+        ->leftJoin('model_details', function ($join){
+            $join->on('models.id', '=', 'model_details.model_id');
+            $join->on('schedule_details.prod_no', '=', 'model_details.prod_no');
+        })
+        ->leftJoin('details', function ($join){
+            $join->on('model_details.id','=','details.model_detail_id');
+            $join->on('schedule_details.start_serial','=','details.start_serial');
+            $join->on('schedule_details.lot_size','=','details.lot_size');
+            $join->on( 'schedule_details.qty','=', 'details.qty');
+            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
+        });
+
+        return $schedule;
     }
 
     // function ini dipakai di function process.
