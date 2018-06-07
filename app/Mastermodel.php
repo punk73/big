@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Mastermodel extends Model
 {
     protected $table = 'models';
+
+    protected $casts = [
+        'cavity',
+    ];
+
     protected $fillable = [
     	'name',
     	'pwbno',

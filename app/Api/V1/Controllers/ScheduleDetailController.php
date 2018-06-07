@@ -75,22 +75,24 @@ class ScheduleDetailController extends Controller
                 //char 6th must be i as country code
                 $countryCode = substr($code, 5, 1);
                 //7 must be A or B
-                $sideCode = substr($code, 6,2);
+                $sideCode = substr($code, 6,1);
                 //char 8-9 cavity. if model  still has no cavity, then 
-                $cavityCode = substr($code, 7, 3);
+                $cavityCode = substr($code, 7, 2);
+                $cavityCode = (int) $cavityCode;
                 //10-12 lot number
                 $lotNo = substr($code, 9, 3);
                 //13-15 seq number
                 $seqNo = substr($code, 12,3);
+                $seqNo = (int) $seqNo;
 
-                /*return [
-                    'model_code' => $modelCode,
-                    'country_code' => $countryCode,
-                    'side_code' => $sideCode,
-                    'cavity_code' => $cavityCode,
-                    'lot_no' => $lotNo,
-                    'seq_no' => $lotNo
-                ];*/
+                // return [
+                //     'model_code' => $modelCode,
+                //     'country_code' => $countryCode,
+                //     'side_code' => $sideCode,
+                //     'cavity_code' => $cavityCode,
+                //     'lot_no' => $lotNo,
+                //     'seq_no' => $seqNo,
+                // ];
 
                 if ($modelCode) {
                     $models = $models->where('model_code', 'like', $modelCode.'%' );
@@ -103,7 +105,9 @@ class ScheduleDetailController extends Controller
                 }
 
                 if ($cavityCode) {
-                    $models = $models->where('models.cavity', '<=', $cavityCode );
+                    
+                    $models = $models->where('models.cavity', '=', $cavityCode );
+                    // return $models->toSql();
                 }
 
                 if ($lotNo) {
@@ -113,10 +117,14 @@ class ScheduleDetailController extends Controller
 
                 if ($seqNo) {
                     // ambil dari property si table schedule_details
+                    // ambil yang seq start >= parameter && seq_end <= parameter
+                    // kenapa? karena kita bandingkan column nya dengan value, bkn sebaliknya.
+
                     $models = $models
-                    ->where('details.seq_start', '>=', $seqNo )
-                    ->where('details.seq_end', '<=', $seqNo );
-                }                
+                    ->where('details.seq_start', '<=', $seqNo )
+                    ->where('details.seq_end', '>=', $seqNo );
+
+                }
                 // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
             }            
         /*End Search*/
@@ -213,15 +221,15 @@ class ScheduleDetailController extends Controller
                     'lot_size' => $schedule->lot_size,
                 ]);
 
-                // cek apakah sudah ada sebelumnya, kalau ada, maka
+                // cek apakah sudah ada sebelumnya, kalau belum ada, input. 
                 if ($detail->seq_start == null) {
                     # add new
                     // kalau belum ada, ya tambah
                     if ($schedule->qty != 0) {
                         # code...
                         $detail->qty = $schedule->qty;
-                        $detail->seq_start = $schedule->start_serial;
-                        $detail->seq_end = $schedule->start_serial + ($schedule->qty - 1); 
+                        $detail->seq_start = 1;
+                        $detail->seq_end = $detail->seq_start + ($schedule->qty - 1); 
 
                         $detail->save();
 
@@ -251,7 +259,6 @@ class ScheduleDetailController extends Controller
                         $schedule->seq_end = $newDetail->seq_end;
                         
                     }
-
                 }
 
                 // update every changes in schedule here.
