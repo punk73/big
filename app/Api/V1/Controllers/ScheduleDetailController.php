@@ -341,6 +341,10 @@ class ScheduleDetailController extends Controller
             // return [$fullname, $importedCsv, count($importedCsv)];
             if ($importedCsv) { //kalau something wrong ini bakal bernilai false
                 
+                // bersihkan schedule detail
+                $directory = storage_path(). '\\public\\code\\';
+                Storage::deleteDirectory($directory);
+                // return $directory;
                 ScheduleDetail::truncate(); //truncate table schedules
                 
                 $newSchedule = [];
@@ -509,7 +513,7 @@ class ScheduleDetailController extends Controller
         return $schedule;
     }
 
-    public function download21(Request $request, $id){
+    public function download(Request $request, $id){
         $schedule = $this->getJoinedSchedule()
         ->where('schedule_details.id', $id )
         ->first();
@@ -546,23 +550,48 @@ class ScheduleDetailController extends Controller
             $generatedType = $request->generated_type;
             if ($generatedType != null && $generatedType != '' ) {
                 // cek generate type board_id or cavity id;
+                // cek apakah file sudah ada. kalau ada, langsung ambil.
+                $path = '\\public\\code\\';
+                    
                 if ($generatedType == 'board_id') {
+                    $filename = 'board_id_schedule_' . $id . '.txt';
+                    $fullpath = $path . $filename;
 
-                    // cek apakah file sudah ada. kalau ada, langsung ambil.
-
-
-                    // kalau belum, generate
-                    //generate file
-                    //generate board id nya aja. (cavity nya = 00)
-                    $cavityCode='00';
-                    $content = '';
-                    for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
-                      // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
-                      $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
-                      $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                    if (!Storage::exists($fullpath)){
+                        // kalau belum, generate
+                        //generate file
+                        //generate board id nya aja. (cavity nya = 00)
+                        $cavityCode='00';
+                        $content = '';
+                        for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
+                          // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
+                          $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
+                          $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        }
+                        //save to Storage
+                        Storage::put($fullpath, $content );    
+                        // return Storage::download($fullpath);
                     }
+                }else if($generatedType == 'cavity_id'){
+                    //generate cavity id;
+                    $filename = 'cavity_id_schedule_' . $id . '.txt';
+                    $fullpath = $path . $filename;
 
-                    $filename = 'schedule_' . $id . '.txt';
+                    if (!Storage::exists($fullpath)) {
+                        $content = '';
+                        $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
+                        for ($i=1; $i <= $cavity ; $i++) { 
+                            for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
+                              $seqNo = str_pad( $j , 3, '0', STR_PAD_LEFT );
+                              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
+                            }
+                        }
+                        // save to storage;
+                        Storage::put($fullpath, $content );    
+
+                    }                    
+                }
+
                     $headers = [
                         'Content-type'=>'text/plain', 
                         'test'=>'YoYo', 
@@ -571,23 +600,15 @@ class ScheduleDetailController extends Controller
                         'Content-Length'=>sizeof($arraySchedule)
                     ];
 
-                    return \Response::make($content , 200, $headers );    
-                    
-                }else if($generatedType == 'cavity_id'){
-                    //generate cavity id;
-                }
+                return response()->download(storage_path("app/".$path."/{$filename}"), $filename , $headers );
+
             }
-
         }
-
-        return [
-            'data' => $schedule 
-        ];
     }
 
-    public function download(Request $request, $id){
-        Storage::put('file.txt', 'teguh');
-    }
+    // tambah hapus file ketika di upload.
+
+
 
 
 }
