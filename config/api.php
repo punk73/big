@@ -157,7 +157,7 @@ return [
     */
 
     'middleware' => [
-
+        // 'cors' => 'Barryvdh\Cors\ServiceProvider',
     ],
 
     /*

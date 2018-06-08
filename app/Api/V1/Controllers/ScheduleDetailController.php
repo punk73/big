@@ -11,6 +11,11 @@ use App\Detail;
 use App\ScheduleHistory;
 use App\Api\V1\Controllers\CsvController;
 use App\Api\V1\Controllers\ScheduleController;
+use Dingo\Api\Exception\ResourceException;
+use Validator;
+use File;
+use Storage;
+use App\User;
 
 class ScheduleDetailController extends Controller
 {
@@ -265,6 +270,8 @@ class ScheduleDetailController extends Controller
                 if ($masterModel->code != null) {
                     # code...
                     $schedule->model_code = $masterModel->code;
+                    $schedule->cavity = $masterModel->cavity;
+                    $schedule->side = $masterModel->side;
                 }
                 //assign model_detail code into schedule;
                 if ($modelDetail->code!=null) {
@@ -500,6 +507,86 @@ class ScheduleDetailController extends Controller
         }
 
         return $schedule;
+    }
+
+    public function download21(Request $request, $id){
+        $schedule = $this->getJoinedSchedule()
+        ->where('schedule_details.id', $id )
+        ->first();
+
+        if ($schedule != null) {
+            // rubah object jadi array
+            $arraySchedule = json_decode(json_encode($schedule), true);
+            // return $arraySchedule;
+            $rules = [];
+            // buat rule. semua data harus not null. kalau null, artinya belum di generate.
+            foreach ($arraySchedule as $key => $value) {
+                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' ) {
+                    continue;
+                }
+                $rules[$key]= ['required'];
+            }
+            // buat validator dari rule tsb.
+            $validator = Validator::make($arraySchedule, $rules );
+
+            //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
+            if ($validator->fails() ) {
+                throw new ResourceException("Schedule not generated yet!", $validator->errors() );
+            }
+
+            $modelCode = $schedule->model_code;
+            $countryCode = 'I';
+            $cavity = $schedule->models_cavity;
+            $side = $schedule->models_side;
+            $lotNo = $schedule->prod_no_code;
+            $seqStart = $schedule->seq_start;
+            $seqEnd = $schedule->seq_end;
+
+            // make file here.
+            $generatedType = $request->generated_type;
+            if ($generatedType != null && $generatedType != '' ) {
+                // cek generate type board_id or cavity id;
+                if ($generatedType == 'board_id') {
+
+                    // cek apakah file sudah ada. kalau ada, langsung ambil.
+
+
+                    // kalau belum, generate
+                    //generate file
+                    //generate board id nya aja. (cavity nya = 00)
+                    $cavityCode='00';
+                    $content = '';
+                    for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
+                      // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
+                      $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
+                      $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                    }
+
+                    $filename = 'schedule_' . $id . '.txt';
+                    $headers = [
+                        'Content-type'=>'text/plain', 
+                        'test'=>'YoYo', 
+                        'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
+                        'X-BooYAH'=>'WorkyWorky',
+                        'Content-Length'=>sizeof($arraySchedule)
+                    ];
+
+                    return \Response::make($content , 200, $headers );    
+                    
+                }else if($generatedType == 'cavity_id'){
+                    //generate cavity id;
+                }
+            }
+
+        }
+
+        return [
+            'data' => $schedule 
+        ];
+    }
+
+    public function download(Request $request, $id){
+        Storage::put('file.txt', 'teguh');
     }
 
 
