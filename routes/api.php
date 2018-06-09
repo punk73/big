@@ -50,7 +50,7 @@ $api->version('v1', function (Router $api) {
 
     $api->group(['prefix' => 'schedules'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleController@index' );
-        // $api->get('/all', 'App\\Api\\V1\\Controllers\\ScheduleController@all' );
+        $api->get('/dates', 'App\\Api\\V1\\Controllers\\ScheduleController@dates' );
         $api->post('/', 'App\\Api\\V1\\Controllers\\ScheduleController@store' );
         $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleController@upload' );
         $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@update' );
@@ -60,7 +60,12 @@ $api->version('v1', function (Router $api) {
 
     $api->group(['prefix' => 'schedule_details'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
+        $api->get('/preprocess', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@preprocess' );
+        $api->get('/download/{id}', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@download' );
+
         $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@upload' );
+
     });
 
     $api->group(['prefix' => 'histories'], function(Router $api){

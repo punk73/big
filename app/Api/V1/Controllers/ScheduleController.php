@@ -8,6 +8,8 @@ use App\ScheduleDetail;
 use App\ScheduleHistory;
 use App\Mastermodel;
 use App\modelDetail;
+use Dingo\Api\Exception\ResourceException;
+use Validator;
 
 class ScheduleController extends Controller
 {
@@ -28,8 +30,12 @@ class ScheduleController extends Controller
     }
 
     public function store(Request $request){
-    	$parameters = $this->getParameter($request);
-    	// return $parameters;
+        try { 
+    	   $parameters = $this->getParameter($request);
+        } catch (Exception $e) {
+            $e->getMessage();
+        }
+    	
     	$model = Schedule::firstOrNew([
             'release_date'=> $parameters['release_date']
         ], $parameters );
@@ -60,66 +66,30 @@ class ScheduleController extends Controller
     	   $model->save();
         }
     	
-        $uploadStatus = $this->upload($request, $model );
-
     	return [
     		'_meta' => [
     			'message' => 'OK',
-                'upload_status' => $uploadStatus
-    		],
+        	],
             'success' => true,
     		'data'=> $model
     	];
     }
 
-    /*public function update(Request $request, $id ){
-    	$model = Schedule::find($id);
-    	
-    	if ($model == null) {
-    		return [
-	    		'_meta' => [
-	    			'message' => 'data not found!'
-	    		],
-	    		'data'=> $model
-	    	];
-    	}
+    public function dates(Request $request){
+        $dates = Schedule::select([
+            'release_date',
 
-    	$parameters = $this->getParameter($request);
-    
-    	foreach ($parameters as $key => $parameter) {
-    		$model->$key = (isset( $parameter) && $parameter != null ) ? $parameter : $model->$key ;
-    	}
+        ])
+        ->join('schedule_histories', 'schedules.id', '=', 'schedule_histories.schedule_id')
+        ->distinct()
+        ->get();
 
-    	$model->save();
 
-    	return [
-    		'_meta' => [
-    			'message' => 'OK'
-    		],
-    		'data'=> $model
-    	];
+        return [
+            'message' => 'OK',
+            'data' =>    $dates
+        ];
     }
-
-    public function delete(Request $request, $id){
-    	$model = Schedule::find($id);
-
-    	if ($model == null) {
-    		return [
-	    		'_meta' => [
-	    			'message' => 'data not found!'
-	    		],
-	    		'data'=> $model
-	    	];
-    	}
-
-    	$model->delete();
-
-    	return [
-    		'_meta' => [
-    			'message' => 'OK'
-    		]
-    	];
-    }*/
 
     public function upload(Request $request, Schedule $schedule ){
     	//get the
@@ -242,13 +212,28 @@ class ScheduleController extends Controller
     }
 
     public function getParameter(Request $request){
-    	return $request->only(
-    		'release_date',
+        $rules = [
+            'release_date' => 'required',
+            'effective_date' => 'required',
+            'end_effective_date' => 'required',
+        ];
+        
+        $request = $request->only(
+            'release_date',
             'effective_date',
             'end_effective_date',
             'is_processed',
             'is_active'
-    	);
+        );
+
+        $validator = Validator::make($request, $rules );
+
+        //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
+        if ($validator->fails() ) {
+            throw new ResourceException("Cannot Process Due to data errors!", $validator->errors() );
+        }
+
+    	return $request;
     }
 
     public function csvToArray($filename = '', $delimiter = ',')

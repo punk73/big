@@ -5,6 +5,9 @@ use App\Http\Controllers\Controller; //parent contoller
 use Illuminate\Http\Request;
 use App\Mastermodel;
 use DB;
+use Storage;
+use File;
+use App\Schedule;
 
 class ModelController extends Controller
 {   
@@ -21,8 +24,6 @@ class ModelController extends Controller
             'models.code',
             'side',
             'model_id',
-            'counter',
-            'start_serial',
             'prod_no',
         ])
         ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');    	
@@ -104,6 +105,8 @@ class ModelController extends Controller
     	}
 
     	$model->save();
+        // delete generated txt file
+        $this->deleteGeneratedFile($id);
 
     	return [
     		'_meta' => [
@@ -126,6 +129,9 @@ class ModelController extends Controller
     	}
 
     	$model->delete();
+        
+        // delete generated txt file
+        $this->deleteGeneratedFile($id);
 
     	return [
     		'_meta' => [
@@ -305,11 +311,6 @@ class ModelController extends Controller
             'time' => ($end_time - $time_start ),
             'message' => 'Code Generated!'
         ];
-
-    }
-
-    public function asdf(){
-        
     }
 
     public function getParameter(Request $request){
@@ -324,8 +325,7 @@ class ModelController extends Controller
     	);
     }
 
-    public function csvToArray($filename = '', $delimiter = ',')
-	{
+    public function csvToArray($filename = '', $delimiter = ','){
 	    if (!file_exists($filename) || !is_readable($filename))
 	        return false;
 
@@ -345,5 +345,23 @@ class ModelController extends Controller
 
 	    return $data;
 	}
+
+    // parameternya schedule id bukan model id
+    private function deleteGeneratedFile($id){
+        $models = Mastermodel::find($id);
+        $schedules = $models->schedules()->get();
+        
+        foreach ($schedules as $key => $schedule ) {
+            # code...
+            $directory = '\\public\\code\\';
+            $filename = 'board_id_schedule_' . $schedule->id . '.txt';
+
+            $fullpath = $directory . $filename;
+
+            Storage::delete($fullpath);
+            
+        }
+
+    }
 
 }

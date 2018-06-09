@@ -7,39 +7,21 @@ use App\Schedule;
 use App\ScheduleDetail;
 use App\Mastermodel;
 use App\modelDetail;
+use App\Detail;
+use App\ScheduleHistory;
+use App\Api\V1\Controllers\CsvController;
+use App\Api\V1\Controllers\ScheduleController;
+use Dingo\Api\Exception\ResourceException;
+use Validator;
+use File;
+use Storage;
+use App\User;
 
 class ScheduleDetailController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	/*$models = ScheduleDetail::select([
-            'schedule_details.id',
-            'schedule_details.schedule_id',
-            'schedule_details.lot_size',
-            // 'schedule_details.code', //we don't have this column anymore
-            'schedule_details.seq_start',
-            'schedule_details.seq_end',
-            'schedule_details.line',
-            'schedule_details.start_serial',
-            'schedule_details.prod_no',
-            'schedule_details.rev_date',
-
-            'models.code as model_code',
-            'models.name as model',
-            'models.pwbname',
-            'models.cavity',
-            'models.pwbno',
-            'models.process',
-
-            'model_details.code as detail_code',
-        ])
-        ->leftJoin('models', 'schedule_details.model', '=', 'models.name' )
-        ->leftJoin('model_details', function($join){
-            $join->on('model_details.model_id', '=', 'models.id');
-            $join->on('model_details.prod_no', '=', 'schedule_details.prod_no');
-        });*/
-
-        $models = ScheduleDetail::select();    	
+        $models = $this->getJoinedSchedule();    	
 
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
@@ -60,11 +42,6 @@ class ScheduleDetailController extends Controller
             if ($request->process != null && $request->process != '' ) {
                 # code...
                 $models = $models->where('process','like','%'.$request->process.'%');
-            }
-
-            if ($request->code != null && $request->code != '' ) {
-                # code...
-                $models = $models->where('schedule_details.code','like','%'.$request->code.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
@@ -91,6 +68,70 @@ class ScheduleDetailController extends Controller
                 # code...
                 $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
             }
+
+            if ($request->code != null && $request->code != '' ) {
+                # code...
+                $code = $request->code;
+
+                //cek if code <= 5 character. search di model.code
+
+                // substr(string, start, length )
+                $modelCode = substr($code, 0, 5); //ambil dari index 0, sebanyak 5 karakter.
+                //char 6th must be i as country code
+                $countryCode = substr($code, 5, 1);
+                //7 must be A or B
+                $sideCode = substr($code, 6,1);
+                //char 8-9 cavity. if model  still has no cavity, then 
+                $cavityCode = substr($code, 7, 2);
+                $cavityCode = (int) $cavityCode;
+                //10-12 lot number
+                $lotNo = substr($code, 9, 3);
+                //13-15 seq number
+                $seqNo = substr($code, 12,3);
+                $seqNo = (int) $seqNo;
+
+                // return [
+                //     'model_code' => $modelCode,
+                //     'country_code' => $countryCode,
+                //     'side_code' => $sideCode,
+                //     'cavity_code' => $cavityCode,
+                //     'lot_no' => $lotNo,
+                //     'seq_no' => $seqNo,
+                // ];
+
+                if ($modelCode) {
+                    $models = $models->where('model_code', 'like', $modelCode.'%' );
+                }
+
+                //country code diabaikan 
+
+                if ($sideCode) {
+                    $models = $models->where('models.side', 'like', $sideCode.'%' );
+                }
+
+                if ($cavityCode) {
+                    
+                    $models = $models->where('models.cavity', '=', $cavityCode );
+                    // return $models->toSql();
+                }
+
+                if ($lotNo) {
+                    // ambil dari property si table schedule_details
+                    $models = $models->where('prod_no_code', '<=', $lotNo );
+                }
+
+                if ($seqNo) {
+                    // ambil dari property si table schedule_details
+                    // ambil yang seq start >= parameter && seq_end <= parameter
+                    // kenapa? karena kita bandingkan column nya dengan value, bkn sebaliknya.
+
+                    $models = $models
+                    ->where('details.seq_start', '<=', $seqNo )
+                    ->where('details.seq_end', '>=', $seqNo );
+
+                }
+                // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
+            }            
         /*End Search*/
 
     	$models = $models->paginate($limit);
@@ -98,98 +139,476 @@ class ScheduleDetailController extends Controller
     }
 
     public function process(Request $request){
-    	$models = ScheduleDetail::
-        leftJoin('models', 'schedule_details.model', '=', 'models.name' )
-        ->leftJoin('model_details', function($join){
-            $join->on('model_details.model_id', '=', 'models.id');
-            $join->on('model_details.prod_no', '=', 'schedule_details.prod_no');
-            $join->on('model_details.start_serial', '=', 'schedule_details.start_serial');
-        })
-        ->select([
-            'schedule_details.id as id',
-            'schedule_details.schedule_id',
-            'schedule_details.lot_size',
-            // 'schedule_details.code',
-            'schedule_details.qty',
-            'schedule_details.seq_start',
-            'schedule_details.seq_end',
-            'schedule_details.line',
-            'schedule_details.prod_no as prod_no',
-            'schedule_details.start_serial',
+        // cek apakah sudah di generate sebelumnya.
+        if ( $this->isGenerated() ) {
+            return [
+                'message' => 'Schedule Code Already Generated or Schedule Not found!'
+            ]; //sudah di generate semua.
+        }
+        
+        // jika tidak punya schedule id, maka masuk sini.
+        if ($this->hasNoScheduleId() ) {
+            // input into schedule header;
+            $scheduleController = new ScheduleController;
+            $schedule = $scheduleController->store($request);
 
-            'models.cavity as cavity',
-            'models.id as model_id',
-            'models.code as model_code',
-            'models.name as model',
-            'models.pwbname',
-            'models.pwbno',
-            'models.process',
-            
-            'model_details.id as model_detail_id',
-            'model_details.code as detail_code',
-        ]);     
+            // update schedule_id into schedule_details;
+            ScheduleDetail::select()->update([
+                'schedule_id' => $schedule['data']['id']
+            ]);
 
-        $models = $models->get();
+            // $scheduleDetail = ScheduleDetail::select()->get();
+            // return $scheduleDetail;
+        }
+        
+        // generate code
+        $scheduleDetail = $this->getJoinedSchedule()
+        ->where('schedule_details.seq_start', null )
+        ->where('schedule_details.qty', '>', 0 )
+        
+        // ->get();
 
-        foreach ($models as $key => $model) {
-            // karena code dihapus, maka pengecekannya ke seq_start seq_end
-            if ($model->seq_start == null) {
-                // input ke model_details
+        // $result = [];
+        // foreach ($scheduleDetail as $key => $schedule) {
+        //     $schedule = json_decode(json_encode($schedule), true);
+        //     $result[] = $this->filterSchedule($schedule);
+        // }
+
+        // return $result;
+
+        ->chunk(300, function ($schedules){
+            // for each disini, isi table yg dibawah bawahnya.
+            $arraySchedule = [];
+            foreach ($schedules as $key => $schedule) {
+                //cek model sudah ada belum,
+                
+                $name = $schedule->model;
+                $pwbno = $schedule->pwbno;
+                $pwbname = $schedule->pwbname;
+                $process = $schedule->process;
+
+                $masterModel = Mastermodel::firstOrNew([
+                    'name' => $name,
+                    'pwbno' => $pwbno,
+                    'pwbname' => $pwbname,
+                    'process' => $process,
+                ]);  
+
+                if (!$masterModel->exists) {
+                    #kalau belum ada aja di save nya. gausah update.
+                    $masterModel->generateCode();
+                    $masterModel->save();
+                }
+
+                // update schedule 
+                if($masterModel->code != null){
+                    $schedule->model_code = $masterModel->code;
+                }
+                
+                // cek model details sudah ada apa belum
                 $modelDetail = modelDetail::firstOrNew([
-                    'model_id' => $model->model_id ,
-                    'prod_no' => $model->prod_no,
-                    // karena nanti di cek dibawah
-                ], [
-                    'start_serial' => $model->start_serial, //ini ga boleh masuk ke where
+                    'model_id'=> $masterModel->id,
+                    'prod_no' => $schedule->prod_no 
                 ]);
 
-                //kalau pertama kesini
-                if (!isset($modelDetail->id)) {
-                    // return $model;
-                    $modelDetail->counter = 1;
-                    $modelDetail->start_serial = $model->start_serial;
-                    $modelDetail->code = str_pad( 1 , 4, '0', STR_PAD_LEFT );
+                if(!$modelDetail->exists ){
+                    //model detail is new, not exists before
+                    // codingnya ada di class model nya
+                    $modelDetail->generateCode( $masterModel->id );
+                    //save model details
                     $modelDetail->save();
+                }
 
-                }else{ //selain itu kesini
+                // cek details sudah ada belum.
+                $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
+                    'model_detail_id' => $modelDetail->id,
+                    'start_serial' => $schedule->start_serial,
+                    'lot_size' => $schedule->lot_size,
+                ]);
 
-                    // disini harusnya di cek dulu start_serialnya sama atau engga. 
-                    // kalau sama, ya jangan generate code lagi. kalau beda baru.
-                    if ($model->start_serial !== $modelDetail->start_serial) {
+                // cek apakah sudah ada sebelumnya, kalau belum ada, input. 
+                if ($detail->seq_start == null) {
+                    # add new
+                    // kalau belum ada, ya tambah
+                    if ($schedule->qty != 0) {
                         # code...
-                        $newModelDetail = new modelDetail;
-                        $newModelDetail->counter = $modelDetail->counter++;
-                        $newModelDetail->start_serial = $model->start_serial; //ini selalu ambil dari schedule
-                        $newModelDetail->code = str_pad( $newModelDetail->counter , 4, '0', STR_PAD_LEFT );
-                        $newModelDetail->save();
+                        $detail->qty = $schedule->qty;
+                        $detail->seq_start = 1;
+                        $detail->seq_end = $detail->seq_start + ($schedule->qty - 1); 
+
+                        $detail->save();
+
+                        // update value schedule
+                        $schedule->seq_start = $detail->seq_start;
+                        $schedule->seq_end = $detail->seq_end;
+                        // $schedule->save();
                     }
+                }else {
+                    // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
+                    if ($schedule->qty != 0) {
+                        //yg masuk kesini, artinya yang schedulenya dipecah. satu prod number, tp schedule 
+                        //nya dipisah pisah. that's why seq start nya ambil dari seq end record sebelumnya.
+                        $newDetail = Detail::firstOrNew([
+                            'model_detail_id' => $modelDetail->id,
+                            'start_serial' => $schedule->start_serial,
+                            'lot_size' => $schedule->lot_size,
+                            'qty' => $schedule->qty,
+                            'seq_start' => $detail->seq_end,
+                            'seq_end' => $detail->seq_end + ($schedule->qty - 1)
+                        ]);
 
-                    // cek modelDetail sudah punya code belum. kalau belum, ya isi.
-                    if ($modelDetail->code == null) {
-                        $modelDetail->start_serial = $model->start_serial; //ini selalu ambil dari schedule
-                        $modelDetail->code = str_pad( $newModelDetail->counter , 4, '0', STR_PAD_LEFT );
-                        $modelDetail->save(); 
+                        $newDetail->save();
 
+                        // update value schedule
+                        $schedule->seq_start = $newDetail->seq_start;
+                        $schedule->seq_end = $newDetail->seq_end;
+                        
                     }
                 }
 
-                if ($model->seq_start ==null) {
-                    // return $model;
-                    $schedule_details = ScheduleDetail::find($model->id);
-                    $schedule_details->seq_start = $model->start_serial;
-                    // seq end ganti, tidak lagi pakai lot, tapi pakai qty
-                    //seq end harusnya tidak dari start serial melain kan dari table baru.
-                    $schedule_details->seq_end = (int) $model->start_serial + (int) $model->qty;
-                    // $schedule_details->code = $model->model_code . $model->detail_code;
-                    $schedule_details->save();
+                // update every changes in schedule here.
+                if ($masterModel->code != null) {
+                    # code...
+                    $schedule->model_code = $masterModel->code;
+                    $schedule->cavity = $masterModel->cavity;
+                    $schedule->side = $masterModel->side;
                 }
-            }            
+                //assign model_detail code into schedule;
+                if ($modelDetail->code!=null) {
+                    $schedule->prod_no_code = $modelDetail->code;
+                }
+                // save changes to schedule details table
+                $schedule->save();
+
+                // input schedule to history. parse object into array
+                $newHistorySchedule = json_decode(json_encode($schedule), true);
+                // filter schedule so that only contain shcedule data.
+                $newHistorySchedule = $this->filterSchedule($newHistorySchedule);
+                // assign into array schedule,
+                // kalau belum ada, insert into database
+                // ScheduleHistory::firstOrCreate($newHistorySchedule);
+                
+                $arraySchedule[] = $newHistorySchedule;
+                // if array schedule contain 50 records, send it to db.
+                if (count($arraySchedule) == 50 || $key == (count($schedules)-1) ) {
+                    # code...
+                    // insert into table history
+                    ScheduleHistory::insert($arraySchedule);
+                    //reset array schedule
+                    $arraySchedule = [];
+                }
+
+            }
+
+            // changes object to array;
+        });
+
+        return [
+            'count' => count($scheduleDetail),
+            'data'  => $scheduleDetail
+        ];
+
+        // copy schedule_details into history
+    }
+
+    public function upload(Request $request){
+        if ($request->hasFile('file')) {
+
+            # kalau bukan csv atau txt, return false;
+            $dataType = $request->file('file')->getClientOriginalExtension();
+
+            if ($dataType == 'csv' || $dataType == 'txt' ) {
+                //yg boleh masuk csv & txt saja
+            }else{
+                return [
+                    'error' =>[ 
+                        'message' => 'you need to upload csv file!',
+                        'data' => $request->file('file')->getClientOriginalExtension()
+                    ]
+                ];
+            }
+
+            $file = $request->file('file');
+            $name = time() . '-' . $file->getClientOriginalName();
+            $path = storage_path('schedules');
+            
+            $file->move($path, $name); //pindah ke file server;
+            
+            // return [$file, $path, $name ];
+            $fullname = $path .'\\'. $name ;
+            $csv = new CsvController;
+            $importedCsv = $csv->csvToArray($fullname);
+            // return [$fullname, $importedCsv, count($importedCsv)];
+            if ($importedCsv) { //kalau something wrong ini bakal bernilai false
+                
+                // bersihkan schedule detail
+                $directory = storage_path(). '\\public\\code\\';
+                Storage::deleteDirectory($directory);
+                // return $directory;
+                ScheduleDetail::truncate(); //truncate table schedules
+                
+                $newSchedule = [];
+                for ($i = 0; $i < count($importedCsv); $i ++)
+                {
+                    // first parameter is data to check, second is data to input
+                    // it'll be deleted soon;
+                    
+                    // $line = $importedCsv[$i]['line'];
+                    // $model = $importedCsv[$i]['model'];
+                    // $pwbNo = $importedCsv[$i]['pwbno'];
+                    // $pwbName = $importedCsv[$i]['pwbname'];
+                    // $process = $importedCsv[$i]['process'];
+                    // $prodNo = $importedCsv[$i]['prod_no'];
+                    // $startSerial = $importedCsv[$i]['start_serial'];
+                    // $lotSize = $importedCsv[$i]['lot_size'];
+                    // $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['lot_size'] : null ;
+                    // $qty = (isset($importedCsv[$i]['qty'])) ? (int) $importedCsv[$i]['qty'] : $lotSize ;
+                    
+                    // add rev date;
+                    $importedCsv[$i]['rev_date'] = date('Y-m-d');
+                    // return $importedCsv[$i];
+                    unset( $importedCsv[$i]['Plan date']);
+                    // return $importedCsv[$i];
+                    // kalau qty 0 gausah diinput ke schedule.
+                    if ($importedCsv[$i]['qty'] > 0 ) {
+                        # code...
+                        $newSchedule[]=$importedCsv[$i];
+                    }
+
+                    if (count($newSchedule) == 5 || $i == (count($importedCsv)-1) ) {
+                        
+                        //insert into db
+                        ScheduleDetail::insert($newSchedule);
+                        // tiap 5, input database.
+                        $newSchedule = []; //reset array
+                    }
+                }
+
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Good!!'
+            ];
+            // return true;
         }
 
         return [
-            'count' => count($models),
-            'data' => $models
+            'message' => 'no file found'
         ];
     }
+
+    // function ini dipakai di function process.
+    private function isGenerated(){
+        // it'll return true or false, based on is there any schedule that has no code yet.
+
+        $ungeneratedSchedule = $this->getJoinedSchedule()
+        ->where('models.code', '=', null ) //cek yang code nya masih null
+        ->orWhere('model_details.code', null ) //cek yang prod_no code nya masih null
+        ->orWhere('schedule_details.seq_start', null) //cek yg blm ada seq start & seq end nya.
+        ->exists();
+
+        return !$ungeneratedSchedule; //kalau ini berisi, artinya masih ada yang belum di generate
+        //artinya harusnya ini return null, atau sudah tidak ada.
+    }
+
+    public function preprocess(){
+        $isGenerated = $this->isGenerated();
+
+        $message = ($isGenerated) ? 'Already Generated' : 'ready to process';
+
+        return [
+            'is_generated'=> $isGenerated,
+            'message'=> $message
+        ];
+    }
+
+    // function ini dipakai di function process.
+    private function hasNoScheduleId(){
+        return ScheduleDetail::where('schedule_id','=', null )->exists();
+    }
+
+    private function getJoinedSchedule(){
+        $schedule = ScheduleDetail::select([
+            'schedule_details.*',
+
+            //models
+            'models.name as models_name',
+            'models.pwbname as models_pwbname',
+            'models.pwbno as models_pwbno',
+            'models.process as models_process',
+            'models.cavity as models_cavity',
+            'models.side as models_side',
+            'models.code as models_code',
+            
+
+            // model_details
+            'model_details.code as model_details_code',
+            'model_details.prod_no as model_details_prod_no',
+
+            // details
+            'details.start_serial as details_start_serial',
+            'details.lot_size as details_lot_size',
+            'details.seq_start as details_seq_start',
+            'details.seq_end as details_seq_end',
+            'details.qty as details_qty',
+
+        ])
+        ->leftJoin('models', function($join){
+            $join->on('schedule_details.model', '=', 'models.name');
+            $join->on('schedule_details.pwbname', '=', 'models.pwbname');
+            $join->on('schedule_details.pwbno', '=', 'models.pwbno');
+            $join->on('schedule_details.process', '=', 'models.process');
+        })
+        ->leftJoin('model_details', function ($join){
+            $join->on('models.id', '=', 'model_details.model_id');
+            $join->on('schedule_details.prod_no', '=', 'model_details.prod_no');
+        })
+        ->leftJoin('details', function ($join){
+            $join->on('model_details.id','=','details.model_detail_id');
+            $join->on('schedule_details.start_serial','=','details.start_serial');
+            $join->on('schedule_details.lot_size','=','details.lot_size');
+            $join->on( 'schedule_details.qty','=', 'details.qty');
+            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
+        });
+
+        return $schedule;
+    }
+
+    // function ini dipakai di function process.
+    private function filterSchedule(array $schedule){
+        $allowed = [
+            // 'id',
+            'schedule_id',
+            'lot_size',
+            'model_code',
+            'prod_no_code',
+            'side',
+            'cavity',
+            'seq_start',
+            'seq_end',
+            'line',
+            'start_serial',
+            'model',
+            'pwbname',
+            'pwbno',
+            'prod_no',
+            'process',
+            'rev_date',
+            'qty',
+        ];
+
+        foreach ($schedule as $key => $value) {
+            if (!in_array($key, $allowed)) {
+                unset($schedule[$key]);    
+            }
+            // make sure semua integer, ttp jadi integer.
+            if ($key == 'schedule_id' || $key == 'start_serial' || $key == 'qty') {
+                $schedule[$key] = (int) $value;
+            }
+        }
+
+        return $schedule;
+    }
+
+    public function download(Request $request, $id){
+        $schedule = $this->getJoinedSchedule()
+        ->where('schedule_details.id', $id )
+        ->first();
+
+        if ($schedule != null) {
+            // rubah object jadi array
+            $arraySchedule = json_decode(json_encode($schedule), true);
+            // return $arraySchedule;
+            $rules = [];
+            // buat rule. semua data harus not null. kalau null, artinya belum di generate.
+            foreach ($arraySchedule as $key => $value) {
+                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' ) {
+                    continue;
+                }
+                $rules[$key]= ['required'];
+            }
+            // buat validator dari rule tsb.
+            $validator = Validator::make($arraySchedule, $rules );
+
+            //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
+            if ($validator->fails() ) {
+                throw new ResourceException("Schedule not generated yet!", $validator->errors() );
+            }
+
+            $modelCode = $schedule->model_code;
+            $countryCode = 'I';
+            $cavity = $schedule->models_cavity;
+            $side = $schedule->models_side;
+            $lotNo = $schedule->prod_no_code;
+            $seqStart = $schedule->seq_start;
+            $seqEnd = $schedule->seq_end;
+
+            // make file here.
+            $generatedType = $request->generated_type;
+            if ($generatedType != null && $generatedType != '' ) {
+                // cek generate type board_id or cavity id;
+                // cek apakah file sudah ada. kalau ada, langsung ambil.
+                $path = '\\public\\code\\';
+                    
+                if ($generatedType == 'board_id') {
+                    $filename = 'board_id_schedule_' . $id . '.txt';
+                    $fullpath = $path . $filename;
+
+                    if (!Storage::exists($fullpath)){
+                        // kalau belum, generate
+                        //generate file
+                        //generate board id nya aja. (cavity nya = 00)
+                        $cavityCode='00';
+                        $content = '';
+                        for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
+                          // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
+                          $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
+                          $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        }
+                        //save to Storage
+                        Storage::put($fullpath, $content );    
+                        // return Storage::download($fullpath);
+                    }
+                }else if($generatedType == 'cavity_id'){
+                    //generate cavity id;
+                    $filename = 'cavity_id_schedule_' . $id . '.txt';
+                    $fullpath = $path . $filename;
+
+                    if (!Storage::exists($fullpath)) {
+                        $content = '';
+                        $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
+                        for ($i=1; $i <= $cavity ; $i++) { 
+                            for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
+                              $seqNo = str_pad( $j , 3, '0', STR_PAD_LEFT );
+                              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
+                            }
+                        }
+                        // save to storage;
+                        Storage::put($fullpath, $content );    
+
+                    }                    
+                }
+
+                    $headers = [
+                        'Content-type'=>'text/plain', 
+                        'test'=>'YoYo', 
+                        'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
+                        'X-BooYAH'=>'WorkyWorky',
+                        'Content-Length'=>sizeof($arraySchedule)
+                    ];
+
+                return response()->download(storage_path("app/".$path."/{$filename}"), $filename , $headers );
+
+            }
+        }
+    }
+
+    // tambah hapus file ketika di upload.
+
+
+
 
 }
