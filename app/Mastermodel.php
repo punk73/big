@@ -51,4 +51,15 @@ class Mastermodel extends Model
            
     	}
     }
+
+    public function schedules(){
+        return $this->select([
+            'schedule_details.*'
+        ])->join('schedule_details', function ($join){
+            $join->on( 'models.name', '=', 'schedule_details.model');
+            $join->on( 'models.pwbname', '=', 'schedule_details.pwbname');
+            $join->on( 'models.pwbno', '=', 'schedule_details.pwbno');
+            $join->on( 'models.process', '=', 'schedule_details.process');
+        })->where('models.id', $this->id );
+    }
 }
