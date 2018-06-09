@@ -8,6 +8,8 @@ use App\ScheduleDetail;
 use App\ScheduleHistory;
 use App\Mastermodel;
 use App\modelDetail;
+use Dingo\Api\Exception\ResourceException;
+use Validator;
 
 class ScheduleController extends Controller
 {
@@ -210,14 +212,28 @@ class ScheduleController extends Controller
     }
 
     public function getParameter(Request $request){
-
-    	return $request->only(
-    		'release_date',
+        $rules = [
+            'release_date' => 'required',
+            'effective_date' => 'required',
+            'end_effective_date' => 'required',
+        ];
+        
+        $request = $request->only(
+            'release_date',
             'effective_date',
             'end_effective_date',
             'is_processed',
             'is_active'
-    	);
+        );
+
+        $validator = Validator::make($request, $rules );
+
+        //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
+        if ($validator->fails() ) {
+            throw new ResourceException("Cannot Process Due to data errors!", $validator->errors() );
+        }
+
+    	return $request;
     }
 
     public function csvToArray($filename = '', $delimiter = ',')
