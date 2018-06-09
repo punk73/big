@@ -162,6 +162,7 @@ class ScheduleDetailController extends Controller
         }
         
         // generate code
+        $self = $this;
         $scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
         ->where('schedule_details.qty', '>', 0 )
@@ -176,7 +177,7 @@ class ScheduleDetailController extends Controller
 
         // return $result;
 
-        ->chunk(300, function ($schedules){
+        ->chunk(300, function ($schedules) use (&$self) {
             // for each disini, isi table yg dibawah bawahnya.
             $arraySchedule = [];
             foreach ($schedules as $key => $schedule) {
@@ -233,8 +234,9 @@ class ScheduleDetailController extends Controller
                     if ($schedule->qty != 0) {
                         # code...
                         $detail->qty = $schedule->qty;
-                        $detail->seq_start = 1;
-                        $detail->seq_end = $detail->seq_start + ($schedule->qty - 1); 
+                        $detail->seq_start = $self->toHexa(1);
+                        $seq_end = $detail->seq_start + ($schedule->qty - 1);
+                        $detail->seq_end = $self->toHexa($seq_end) ; 
 
                         $detail->save();
 
@@ -253,8 +255,8 @@ class ScheduleDetailController extends Controller
                             'start_serial' => $schedule->start_serial,
                             'lot_size' => $schedule->lot_size,
                             'qty' => $schedule->qty,
-                            'seq_start' => $detail->seq_end,
-                            'seq_end' => $detail->seq_end + ($schedule->qty - 1)
+                            'seq_start' => $self->toHexa($detail->seq_end),
+                            'seq_end' => $self->toHexa( $detail->seq_end + ($schedule->qty - 1) )
                         ]);
 
                         $newDetail->save();
@@ -604,6 +606,10 @@ class ScheduleDetailController extends Controller
 
             }
         }
+    }
+
+    private function toHexa($no){
+        return str_pad( dechex($no) , 3, '0', STR_PAD_LEFT );
     }
 
     // tambah hapus file ketika di upload.

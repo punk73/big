@@ -13,51 +13,37 @@ class CreateTableScheduleDetails extends Migration
      */
     public function up()
     {
-        
+        $self = $this;
 
-        Schema::create('schedule_details', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('schedule_id')->nullable(); //ini jadi nullable
-            $table->string('lot_size')->nullable();
-            $table->string('model_code', 6)->nullable(); //aktualnya si 5 digit
-            $table->string('prod_no_code', 3 )->nullable();
-            $table->string('side', 2)->nullable(); // A or B
-            $table->integer('cavity')->nullable();
-            $table->integer('seq_start')->nullable();
-            $table->integer('seq_end')->nullable();
-            $table->string('line', 35 );
-            $table->integer('start_serial');
-            $table->string('model', 35 ); 
-            $table->string('pwbname', 35 ); 
-            $table->string('pwbno', 35 ); 
-            $table->string('prod_no', 35 );
-            $table->string('process', 35 ); 
-            $table->dateTimeTz('rev_date'); //date time with timezone
-            $table->integer('qty'); //qty untuk yg prod_no yg dipisah
-            $table->timestamps();
+        Schema::create('schedule_details', function (Blueprint $table) use (&$self) {
+            $self->createTable($table);
         });
 
-        Schema::create('schedule_histories', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('schedule_id');
-            $table->string('lot_size')->nullable();
-            $table->string('model_code', 6)->nullable(); //aktualnya si 5 digit
-            $table->string('prod_no_code', 3 )->nullable();
-            $table->string('side', 2)->nullable(); // A or B
-            $table->integer('cavity')->nullable();
-            $table->integer('seq_start')->nullable();
-            $table->integer('seq_end')->nullable();
-            $table->string('line', 35 );
-            $table->integer('start_serial');
-            $table->string('model', 35 ); 
-            $table->string('pwbname', 35 ); 
-            $table->string('pwbno', 35 ); 
-            $table->string('prod_no', 35 );
-            $table->string('process', 35 ); 
-            $table->date('rev_date'); //date time with timezone
-            $table->integer('qty'); //qty untuk yg prod_no yg dipisah
-            $table->timestamps();
+        Schema::create('schedule_histories', function (Blueprint $table) use (&$self) {
+            $self->createTable($table);
         });
+    }
+
+    public function createTable(Blueprint $table ){
+        $table->increments('id');
+        $table->integer('schedule_id')->nullable(); //ini jadi nullable
+        $table->string('lot_size')->nullable();
+        $table->string('model_code', 6)->nullable(); //aktualnya si 5 digit
+        $table->string('prod_no_code', 3 )->nullable();
+        $table->string('side', 2)->nullable(); // A or B
+        $table->integer('cavity')->nullable();
+        $table->string('seq_start')->nullable();
+        $table->string('seq_end')->nullable();
+        $table->string('line', 35 );
+        $table->integer('start_serial');
+        $table->string('model', 35 ); 
+        $table->string('pwbname', 35 ); 
+        $table->string('pwbno', 35 ); 
+        $table->string('prod_no', 35 );
+        $table->string('process', 35 ); 
+        $table->dateTimeTz('rev_date'); //date time with timezone
+        $table->integer('qty'); //qty untuk yg prod_no yg dipisah
+        $table->timestamps();
     }
 
     /**

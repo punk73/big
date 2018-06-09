@@ -18,8 +18,8 @@ class CreateTableDetails extends Migration
             $table->integer('model_detail_id');
             $table->integer('start_serial');
             $table->string('lot_size');
-            $table->integer('seq_start');
-            $table->integer('seq_end');
+            $table->string('seq_start');
+            $table->string('seq_end');
             $table->integer('qty');            
             $table->timestamps();
         });
