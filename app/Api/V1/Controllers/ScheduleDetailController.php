@@ -18,7 +18,12 @@ use Storage;
 use App\User;
 
 class ScheduleDetailController extends Controller
-{
+{   
+    /*NAME OF GENERATED FILE*/
+    protected $board_filename = 'board_id_schedule_';
+    protected $cavity_filename = 'cavity_id_schedule_';
+    protected $schedule_filename = 'schedule_code_';
+
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
         $models = $this->getJoinedSchedule();    	
@@ -88,7 +93,7 @@ class ScheduleDetailController extends Controller
                 $lotNo = substr($code, 9, 3);
                 //13-15 seq number
                 $seqNo = substr($code, 12,3);
-                $seqNo = (int) $seqNo;
+                $seqNo = $seqNo;
 
                 // return [
                 //     'model_code' => $modelCode,
@@ -545,8 +550,12 @@ class ScheduleDetailController extends Controller
             $cavity = $schedule->models_cavity;
             $side = $schedule->models_side;
             $lotNo = $schedule->prod_no_code;
-            $seqStart = $schedule->seq_start;
-            $seqEnd = $schedule->seq_end;
+            $seqStart = $this->toDecimal($schedule->seq_start);
+            $seqEnd = $this->toDecimal($schedule->seq_end);
+
+            if ($request->regenerate != null && $request->regenerate == 'true') {
+                $this->deleteGeneratedFile($id);
+            }
 
             // make file here.
             $generatedType = $request->generated_type;
@@ -554,29 +563,31 @@ class ScheduleDetailController extends Controller
                 // cek generate type board_id or cavity id;
                 // cek apakah file sudah ada. kalau ada, langsung ambil.
                 $path = '\\public\\code\\';
-                    
+
                 if ($generatedType == 'board_id') {
-                    $filename = 'board_id_schedule_' . $id . '.txt';
+                    $filename = $this->board_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)){
                         // kalau belum, generate
+
                         //generate file
                         //generate board id nya aja. (cavity nya = 00)
                         $cavityCode='00';
                         $content = '';
-                        for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
+                        for ($i= $seqStart; $i <= $seqEnd; $i++) { 
                           // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
-                          $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
+                          $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                           $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                         }
+
                         //save to Storage
                         Storage::put($fullpath, $content );    
                         // return Storage::download($fullpath);
                     }
                 }else if($generatedType == 'cavity_id'){
                     //generate cavity id;
-                    $filename = 'cavity_id_schedule_' . $id . '.txt';
+                    $filename = $this->cavity_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)) {
@@ -584,23 +595,43 @@ class ScheduleDetailController extends Controller
                         $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
                         for ($i=1; $i <= $cavity ; $i++) { 
                             for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
-                              $seqNo = str_pad( $j , 3, '0', STR_PAD_LEFT );
+                              $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
                               $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
                             }
                         }
                         // save to storage;
                         Storage::put($fullpath, $content );    
+                    }
+                }else {
+                    // ini yang all
+                    $filename = $this->schedule_filename .$id.'.txt';
+                    $fullpath = $path.$filename;
 
-                    }                    
+                    if (!Storage::exists($fullpath)) {
+                        
+                        $content = '';
+
+                        for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
+                            for ($cav=0; $cav <= $cavity ; $cav++) { 
+                                $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
+                                $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
+                                $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            }
+                        }
+
+                        // save to storage;
+                        Storage::put($fullpath, $content );    
+                    }
+
                 }
 
-                    $headers = [
-                        'Content-type'=>'text/plain', 
-                        'test'=>'YoYo', 
-                        'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
-                        'X-BooYAH'=>'WorkyWorky',
-                        'Content-Length'=>sizeof($arraySchedule)
-                    ];
+                $headers = [
+                    'Content-type'=>'text/plain', 
+                    'test'=>'YoYo', 
+                    'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
+                    'X-BooYAH'=>'WorkyWorky',
+                    'Content-Length'=>sizeof($arraySchedule)
+                ];
 
                 return response()->download(storage_path("app/".$path."/{$filename}"), $filename , $headers );
 
@@ -610,6 +641,30 @@ class ScheduleDetailController extends Controller
 
     private function toHexa($no){
         return str_pad( dechex($no) , 3, '0', STR_PAD_LEFT );
+    }
+
+    private function toDecimal($hexa){
+        return hexdec($hexa);
+    }
+
+    private function deleteGeneratedFile($id){
+        $schedules = ScheduleDetail::find($id);
+        $directory = '\\public\\code\\';
+        
+        $board = $this->board_filename . $id . '.txt';
+        $cav = $this->cavity_filename . $id . '.txt';
+        $schedulefile = $this->schedule_filename . $id . '.txt';
+        
+        $boardname = $directory . $board;
+        $cavName = $directory . $cav;
+        $schedulefilename = $directory .$schedulefile;
+
+        Storage::delete([
+            $boardname,
+            $cavName,
+            $schedulefilename,
+        ]);
+            
     }
 
     // tambah hapus file ketika di upload.
