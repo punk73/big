@@ -139,7 +139,9 @@ class ScheduleDetailController extends Controller
             }            
         /*End Search*/
 
-    	$models = $models->paginate($limit);
+    	$models = $models
+        ->orderBy('schedule_details.id', 'desc')
+        ->paginate($limit);
     	return $models;
     }
 
@@ -420,6 +422,7 @@ class ScheduleDetailController extends Controller
     }
 
     public function preprocess(){
+
         $isGenerated = $this->isGenerated();
 
         $message = ($isGenerated) ? 'Already Generated' : 'ready to process';
@@ -532,7 +535,7 @@ class ScheduleDetailController extends Controller
             $rules = [];
             // buat rule. semua data harus not null. kalau null, artinya belum di generate.
             foreach ($arraySchedule as $key => $value) {
-                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' ) {
+                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' || $key == 'regenerate' ) {
                     continue;
                 }
                 $rules[$key]= ['required'];
@@ -554,6 +557,7 @@ class ScheduleDetailController extends Controller
             $seqEnd = $this->toDecimal($schedule->seq_end);
 
             if ($request->regenerate != null && $request->regenerate == 'true') {
+                
                 $this->deleteGeneratedFile($id);
             }
 
@@ -647,7 +651,8 @@ class ScheduleDetailController extends Controller
         return hexdec($hexa);
     }
 
-    private function deleteGeneratedFile($id){
+    // dipakai juga di modelController
+    public function deleteGeneratedFile($id){
         $schedules = ScheduleDetail::find($id);
         $directory = '\\public\\code\\';
         
