@@ -386,4 +386,41 @@ class ModelController extends Controller
 
     }
 
+    public function download(){
+        $do = Mastermodel::get();
+        // return $do;
+        $fname = 'Mastermodel.csv';
+
+        header("Content-type: text/csv");
+        header("Content-Disposition: attachment; filename=$fname");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        
+        $fp = fopen("php://output", "w");
+        
+        $headers = 'id,name,pwbno,pwbname,process,cavity,side,code,created_at,updated_at'."\n";
+
+        fwrite($fp,$headers);
+
+        foreach ($do as $key => $value) {
+            # code...
+            $row = [
+                $value->id,
+                $value->name,
+                $value->pwbno,
+                $value->pwbname,
+                $value->process,
+                $value->cavity,
+                $value->side,
+                $value->code,
+                $value->created_at,
+                $value->updated_at,   
+            ];
+            
+            fputcsv($fp, $row);
+        }
+
+        fclose($fp);
+    }
+
 }

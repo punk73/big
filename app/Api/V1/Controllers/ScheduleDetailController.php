@@ -669,10 +669,56 @@ class ScheduleDetailController extends Controller
             $cavName,
             $schedulefilename,
         ]);
-            
     }
 
-    // tambah hapus file ketika di upload.
+    public function downloadSchedule(){
+        $do = ScheduleDetail::get();
+        
+        // return $model;
+
+        $fname = 'Schedule.csv';
+
+        header("Content-type: text/csv");
+        header("Content-Disposition: attachment; filename=$fname");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        
+        $fp = fopen("php://output", "w");
+        
+        $headers = 'id,schedule_id,lot_size,model_code,prod_no_code,side,cavity,seq_start,seq_end,line,start_serial,model,pwbname,pwbno,prod_no,process,rev_date,qty,created_at,updated_at'."\n";
+
+        fwrite($fp,$headers);
+
+        foreach ($do as $key => $value) {
+            # code...
+            $row = [
+                $value->id,
+                $value->schedule_id,
+                $value->lot_size,
+                $value->model_code,
+                $value->prod_no_code,
+                $value->side,
+                $value->cavity,
+                $value->seq_start,
+                $value->seq_end,
+                $value->line,
+                $value->start_serial,
+                $value->model,
+                $value->pwbname,
+                $value->pwbno,
+                $value->prod_no,
+                $value->process,
+                $value->rev_date,
+                $value->qty,
+                $value->created_at,
+                $value->updated_at,
+            ];
+            
+            fputcsv($fp, $row);
+        }
+
+        fclose($fp);
+    }
 
 
 
