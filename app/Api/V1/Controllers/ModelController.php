@@ -8,6 +8,7 @@ use DB;
 use Storage;
 use File;
 use App\Schedule;
+use App\ScheduleDetail;
 
 class ModelController extends Controller
 {   
@@ -64,7 +65,9 @@ class ModelController extends Controller
                 ->orWhere('model_details.code', 'like', $request->code .'%');
             }
         /*End Search*/
-    	$models = $models->paginate($limit);
+    	$models = $models
+        ->orderBy('id','desc')
+        ->paginate($limit);
     	return $models;
     }
 
@@ -127,11 +130,11 @@ class ModelController extends Controller
 	    		'data'=> $model
 	    	];
     	}
-
-    	$model->delete();
         
         // delete generated txt file
         $this->deleteGeneratedFile($id);
+
+        $model->delete();
 
     	return [
     		'_meta' => [
@@ -322,7 +325,7 @@ class ModelController extends Controller
             'cavity',
             'side',
     		'code'
-    	);
+    	); 
     }
 
     public function csvToArray($filename = '', $delimiter = ','){
@@ -346,22 +349,78 @@ class ModelController extends Controller
 	    return $data;
 	}
 
+    protected $board_filename = 'board_id_schedule_';
+    protected $cavity_filename = 'cavity_id_schedule_';
+    protected $schedule_filename = 'schedule_code_';
+    
     // parameternya schedule id bukan model id
     private function deleteGeneratedFile($id){
         $models = Mastermodel::find($id);
         $schedules = $models->schedules()->get();
         
+        $schedule_id = [];
         foreach ($schedules as $key => $schedule ) {
             # code...
             $directory = '\\public\\code\\';
-            $filename = 'board_id_schedule_' . $schedule->id . '.txt';
+            $board = $this->board_filename . $schedule->id . '.txt';
+            $cav = $this->cavity_filename . $schedule->id . '.txt';
+            $schedulefile = $this->schedule_filename . $schedule->id . '.txt';
+            
+            $boardname = $directory . $board;
+            $cavName = $directory . $cav;
+            $schedulefilename = $directory .$schedulefile;
 
-            $fullpath = $directory . $filename;
-
-            Storage::delete($fullpath);
+            Storage::delete([
+                $boardname,
+                $cavName,
+                $schedulefilename,
+            ]);
+            
+            // kumpulkan id schedule untuk dihapus
+            $schedule_id[] = $schedule->id;
             
         }
 
+        // hapus schedule yg sudah terkumpul
+        ScheduleDetail::destroy($schedule_id);
+
+    }
+
+    public function download(){
+        $do = Mastermodel::get();
+        // return $do;
+        $fname = 'Mastermodel.csv';
+
+        header("Content-type: text/csv");
+        header("Content-Disposition: attachment; filename=$fname");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        
+        $fp = fopen("php://output", "w");
+        
+        $headers = 'id,name,pwbno,pwbname,process,cavity,side,code,created_at,updated_at'."\n";
+
+        fwrite($fp,$headers);
+
+        foreach ($do as $key => $value) {
+            # code...
+            $row = [
+                $value->id,
+                $value->name,
+                $value->pwbno,
+                $value->pwbname,
+                $value->process,
+                $value->cavity,
+                $value->side,
+                $value->code,
+                $value->created_at,
+                $value->updated_at,   
+            ];
+            
+            fputcsv($fp, $row);
+        }
+
+        fclose($fp);
     }
 
 }

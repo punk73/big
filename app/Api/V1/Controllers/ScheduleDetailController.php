@@ -18,7 +18,12 @@ use Storage;
 use App\User;
 
 class ScheduleDetailController extends Controller
-{
+{   
+    /*NAME OF GENERATED FILE*/
+    protected $board_filename = 'board_id_schedule_';
+    protected $cavity_filename = 'cavity_id_schedule_';
+    protected $schedule_filename = 'schedule_code_';
+
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
         $models = $this->getJoinedSchedule();    	
@@ -88,7 +93,7 @@ class ScheduleDetailController extends Controller
                 $lotNo = substr($code, 9, 3);
                 //13-15 seq number
                 $seqNo = substr($code, 12,3);
-                $seqNo = (int) $seqNo;
+                $seqNo = $seqNo;
 
                 // return [
                 //     'model_code' => $modelCode,
@@ -134,7 +139,9 @@ class ScheduleDetailController extends Controller
             }            
         /*End Search*/
 
-    	$models = $models->paginate($limit);
+    	$models = $models
+        ->orderBy('schedule_details.id', 'desc')
+        ->paginate($limit);
     	return $models;
     }
 
@@ -162,6 +169,7 @@ class ScheduleDetailController extends Controller
         }
         
         // generate code
+        $self = $this;
         $scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
         ->where('schedule_details.qty', '>', 0 )
@@ -176,7 +184,7 @@ class ScheduleDetailController extends Controller
 
         // return $result;
 
-        ->chunk(300, function ($schedules){
+        ->chunk(300, function ($schedules) use (&$self) {
             // for each disini, isi table yg dibawah bawahnya.
             $arraySchedule = [];
             foreach ($schedules as $key => $schedule) {
@@ -233,8 +241,9 @@ class ScheduleDetailController extends Controller
                     if ($schedule->qty != 0) {
                         # code...
                         $detail->qty = $schedule->qty;
-                        $detail->seq_start = 1;
-                        $detail->seq_end = $detail->seq_start + ($schedule->qty - 1); 
+                        $detail->seq_start = $self->toHexa(1);
+                        $seq_end = $detail->seq_start + ($schedule->qty - 1);
+                        $detail->seq_end = $self->toHexa($seq_end) ; 
 
                         $detail->save();
 
@@ -253,8 +262,8 @@ class ScheduleDetailController extends Controller
                             'start_serial' => $schedule->start_serial,
                             'lot_size' => $schedule->lot_size,
                             'qty' => $schedule->qty,
-                            'seq_start' => $detail->seq_end,
-                            'seq_end' => $detail->seq_end + ($schedule->qty - 1)
+                            'seq_start' => $self->toHexa($detail->seq_end),
+                            'seq_end' => $self->toHexa( $detail->seq_end + ($schedule->qty - 1) )
                         ]);
 
                         $newDetail->save();
@@ -413,6 +422,7 @@ class ScheduleDetailController extends Controller
     }
 
     public function preprocess(){
+
         $isGenerated = $this->isGenerated();
 
         $message = ($isGenerated) ? 'Already Generated' : 'ready to process';
@@ -525,7 +535,7 @@ class ScheduleDetailController extends Controller
             $rules = [];
             // buat rule. semua data harus not null. kalau null, artinya belum di generate.
             foreach ($arraySchedule as $key => $value) {
-                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' ) {
+                if ($key == 'created_at' || $key == 'side' || $key == 'cavity' || $key == 'regenerate' ) {
                     continue;
                 }
                 $rules[$key]= ['required'];
@@ -543,8 +553,13 @@ class ScheduleDetailController extends Controller
             $cavity = $schedule->models_cavity;
             $side = $schedule->models_side;
             $lotNo = $schedule->prod_no_code;
-            $seqStart = $schedule->seq_start;
-            $seqEnd = $schedule->seq_end;
+            $seqStart = $this->toDecimal($schedule->seq_start);
+            $seqEnd = $this->toDecimal($schedule->seq_end);
+
+            if ($request->regenerate != null && $request->regenerate == 'true') {
+                
+                $this->deleteGeneratedFile($id);
+            }
 
             // make file here.
             $generatedType = $request->generated_type;
@@ -552,29 +567,31 @@ class ScheduleDetailController extends Controller
                 // cek generate type board_id or cavity id;
                 // cek apakah file sudah ada. kalau ada, langsung ambil.
                 $path = '\\public\\code\\';
-                    
+
                 if ($generatedType == 'board_id') {
-                    $filename = 'board_id_schedule_' . $id . '.txt';
+                    $filename = $this->board_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)){
                         // kalau belum, generate
+
                         //generate file
                         //generate board id nya aja. (cavity nya = 00)
                         $cavityCode='00';
                         $content = '';
-                        for ($i= $seqStart; $i <= $seqEnd  ; $i++) { 
+                        for ($i= $seqStart; $i <= $seqEnd; $i++) { 
                           // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
-                          $seqNo = str_pad( $i , 3, '0', STR_PAD_LEFT );
+                          $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                           $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                         }
+
                         //save to Storage
                         Storage::put($fullpath, $content );    
                         // return Storage::download($fullpath);
                     }
                 }else if($generatedType == 'cavity_id'){
                     //generate cavity id;
-                    $filename = 'cavity_id_schedule_' . $id . '.txt';
+                    $filename = $this->cavity_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)) {
@@ -582,23 +599,43 @@ class ScheduleDetailController extends Controller
                         $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
                         for ($i=1; $i <= $cavity ; $i++) { 
                             for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
-                              $seqNo = str_pad( $j , 3, '0', STR_PAD_LEFT );
+                              $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
                               $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
                             }
                         }
                         // save to storage;
                         Storage::put($fullpath, $content );    
+                    }
+                }else {
+                    // ini yang all
+                    $filename = $this->schedule_filename .$id.'.txt';
+                    $fullpath = $path.$filename;
 
-                    }                    
+                    if (!Storage::exists($fullpath)) {
+                        
+                        $content = '';
+
+                        for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
+                            for ($cav=0; $cav <= $cavity ; $cav++) { 
+                                $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
+                                $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
+                                $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            }
+                        }
+
+                        // save to storage;
+                        Storage::put($fullpath, $content );    
+                    }
+
                 }
 
-                    $headers = [
-                        'Content-type'=>'text/plain', 
-                        'test'=>'YoYo', 
-                        'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
-                        'X-BooYAH'=>'WorkyWorky',
-                        'Content-Length'=>sizeof($arraySchedule)
-                    ];
+                $headers = [
+                    'Content-type'=>'text/plain', 
+                    'test'=>'YoYo', 
+                    'Content-Disposition'=>sprintf('attachment; filename="%s"', $filename),
+                    'X-BooYAH'=>'WorkyWorky',
+                    'Content-Length'=>sizeof($arraySchedule)
+                ];
 
                 return response()->download(storage_path("app/".$path."/{$filename}"), $filename , $headers );
 
@@ -606,7 +643,82 @@ class ScheduleDetailController extends Controller
         }
     }
 
-    // tambah hapus file ketika di upload.
+    private function toHexa($no){
+        return str_pad( dechex($no) , 3, '0', STR_PAD_LEFT );
+    }
+
+    private function toDecimal($hexa){
+        return hexdec($hexa);
+    }
+
+    // dipakai juga di modelController
+    public function deleteGeneratedFile($id){
+        $schedules = ScheduleDetail::find($id);
+        $directory = '\\public\\code\\';
+        
+        $board = $this->board_filename . $id . '.txt';
+        $cav = $this->cavity_filename . $id . '.txt';
+        $schedulefile = $this->schedule_filename . $id . '.txt';
+        
+        $boardname = $directory . $board;
+        $cavName = $directory . $cav;
+        $schedulefilename = $directory .$schedulefile;
+
+        Storage::delete([
+            $boardname,
+            $cavName,
+            $schedulefilename,
+        ]);
+    }
+
+    public function downloadSchedule(){
+        $do = ScheduleDetail::get();
+        
+        // return $model;
+
+        $fname = 'Schedule.csv';
+
+        header("Content-type: text/csv");
+        header("Content-Disposition: attachment; filename=$fname");
+        header("Pragma: no-cache");
+        header("Expires: 0");
+        
+        $fp = fopen("php://output", "w");
+        
+        $headers = 'id,schedule_id,lot_size,model_code,prod_no_code,side,cavity,seq_start,seq_end,line,start_serial,model,pwbname,pwbno,prod_no,process,rev_date,qty,created_at,updated_at'."\n";
+
+        fwrite($fp,$headers);
+
+        foreach ($do as $key => $value) {
+            # code...
+            $row = [
+                $value->id,
+                $value->schedule_id,
+                $value->lot_size,
+                $value->model_code,
+                $value->prod_no_code,
+                $value->side,
+                $value->cavity,
+                $value->seq_start,
+                $value->seq_end,
+                $value->line,
+                $value->start_serial,
+                $value->model,
+                $value->pwbname,
+                $value->pwbno,
+                $value->prod_no,
+                $value->process,
+                $value->rev_date,
+                $value->qty,
+                $value->created_at,
+                $value->updated_at,
+            ];
+            
+            fputcsv($fp, $row);
+        }
+
+        fclose($fp);
+    }
 
 
 
