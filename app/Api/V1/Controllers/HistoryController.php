@@ -78,12 +78,12 @@ class HistoryController extends Controller
 
             if ($request->code != null && $request->code != '' ) {
                 # code...
-                $models = $models->where('schedule_histories.code','like','%'.$request->code.'%');
+                $models = $models->where('model_code','like','%'.$request->code.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
                 # code...
-                $models = $models->where('lot_size','like','%'.$request->lot_size.'%');
+                $models = $models->where('schedule_histories.lot_size','like','%'.$request->lot_size.'%');
             }
 
             if ($request->seq_start != null && $request->seq_start != '' ) {
@@ -99,6 +99,11 @@ class HistoryController extends Controller
             if ($request->line != null && $request->line != '' ) {
                 # code...
                 $models = $models->where('line','like','%'.$request->line.'%');
+            }
+
+            if ($request->prod_no != null && $request->prod_no != '' ) {
+                # code...
+                $models = $models->where('schedule_histories.prod_no','like','%'.$request->prod_no.'%');
             }
 
             if ($request->rev_date != null && $request->rev_date != '' ) {

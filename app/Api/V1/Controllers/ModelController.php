@@ -66,7 +66,7 @@ class ModelController extends Controller
             }
         /*End Search*/
     	$models = $models
-        ->orderBy('id','desc')
+        ->orderBy('models.id','desc')
         ->paginate($limit);
     	return $models;
     }

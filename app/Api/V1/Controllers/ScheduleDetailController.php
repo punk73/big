@@ -74,6 +74,11 @@ class ScheduleDetailController extends Controller
                 $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
             }
 
+            if ($request->qty != null && $request->qty != '' ) {
+                # code...
+                $models = $models->where('schedule_details.qty','like', $request->qty.'%');
+            }
+
             if ($request->code != null && $request->code != '' ) {
                 # code...
                 $code = $request->code;
