@@ -28,7 +28,7 @@ class ScheduleDetailController extends Controller
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
         $models = $this->getJoinedSchedule();    	
 
-        /*Search Query*/
+        // Search Query
             if ($request->name != null && $request->name != '' ) {
                 # code...
                 $models = $models->where('model','like','%'.$request->name.'%');
@@ -142,7 +142,7 @@ class ScheduleDetailController extends Controller
                 }
                 // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
             }            
-        /*End Search*/
+        // End Search
 
     	$models = $models
         ->orderBy('schedule_details.id', 'desc')

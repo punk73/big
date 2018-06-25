@@ -109,7 +109,9 @@ class ModelController extends Controller
 
     	$model->save();
         // delete generated txt file
-        $this->deleteGeneratedFile($id);
+        // this update schedule details;
+        $this->updateScheduleDetails($id, $parameters );
+        // $this->deleteGeneratedFile($id);
 
     	return [
     		'_meta' => [
@@ -349,6 +351,13 @@ class ModelController extends Controller
 	    return $data;
 	}
 
+    public function show(Request $request, $id ){
+        $models = Mastermodel::find($id);
+
+        return $models;
+        $models = $models->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');
+    }
+
     protected $board_filename = 'board_id_schedule_';
     protected $cavity_filename = 'cavity_id_schedule_';
     protected $schedule_filename = 'schedule_code_';
@@ -383,7 +392,24 @@ class ModelController extends Controller
 
         // hapus schedule yg sudah terkumpul
         ScheduleDetail::destroy($schedule_id);
+    }
 
+    private function updateScheduleDetails($id, Array $parameters ){
+        $models = Mastermodel::find($id);
+        $schedules = $models->schedules()->get();
+        
+        foreach ($schedules as $key => $schedule ) {
+            /*foreach ($parameters as $key => $parameter) {
+                $schedule->$key = (isset( $parameter) && $parameter != null ) ? $parameter : $schedule->$key ;
+            }*/
+
+            $schedule->model = (isset( $parameters['name']) && $parameters['name'] != null ) ? $parameters['name'] : $schedule->model ;
+            $schedule->pwbname = (isset( $parameters['pwbname']) && $parameters['pwbname'] != null ) ? $parameters['pwbname'] : $schedule->pwbname ;
+            $schedule->pwbno = (isset( $parameters['pwbno']) && $parameters['pwbno'] != null ) ? $parameters['pwbno'] : $schedule->pwbno;
+            $schedule->process = (isset( $parameters['process']) && $parameters['process'] != null ) ? $parameters['process'] : $schedule->process ;
+
+            $schedule->save();
+        }
     }
 
     public function download(){
