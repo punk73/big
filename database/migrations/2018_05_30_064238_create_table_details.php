@@ -16,6 +16,7 @@ class CreateTableDetails extends Migration
         Schema::create('details', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('model_detail_id');
+            $table->integer('schedule_id');
             $table->integer('start_serial');
             $table->string('lot_size');
             $table->string('seq_start');
