@@ -179,6 +179,12 @@ class ScheduleDetailController extends Controller
         
         // generate code
         $self = $this;
+        
+        $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
+        $masterScheduleId = $masterSchedule->id;
+
+        // return $masterScheduleId;
+
         $scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
         ->where('schedule_details.qty', '>', 0 )
@@ -193,7 +199,7 @@ class ScheduleDetailController extends Controller
 
         // return $result;
 
-        ->chunk(300, function ($schedules) use (&$self) {
+        ->chunk(300, function ($schedules) use (&$self, &$masterScheduleId ) {
             // for each disini, isi table yg dibawah bawahnya.
             $arraySchedule = [];
             foreach ($schedules as $key => $schedule) {
@@ -209,7 +215,7 @@ class ScheduleDetailController extends Controller
                     'pwbno' => $pwbno,
                     'pwbname' => $pwbname,
                     'process' => $process,
-                ]);  
+                ]);
 
                 if (!$masterModel->exists) {
                     #kalau belum ada aja di save nya. gausah update.
@@ -241,6 +247,7 @@ class ScheduleDetailController extends Controller
                     'model_detail_id' => $modelDetail->id,
                     'start_serial' => $schedule->start_serial,
                     'lot_size' => $schedule->lot_size,
+                    'schedule_id' => $masterScheduleId,
                 ]);
 
                 // cek apakah sudah ada sebelumnya, kalau belum ada, input. 
@@ -278,8 +285,8 @@ class ScheduleDetailController extends Controller
                             'lot_size' => $schedule->lot_size,
                             'qty' => $schedule->qty,
                             'seq_start' => $newSeqStart , //it's already hexadecimal
-                            'seq_end' => $newSeqEnd //dont need to 
-                            //minus 1 because
+                            'seq_end' => $newSeqEnd,
+                            'schedule_id' => $masterScheduleId,
                         ]);
 
                         $newDetail->save();
@@ -611,11 +618,11 @@ class ScheduleDetailController extends Controller
 
                     if (!Storage::exists($fullpath)) {
                         $content = '';
-                        $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
-                        for ($i=1; $i <= $cavity ; $i++) { 
-                            for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
+                        for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
+                            for ($i=1; $i <= $cavity ; $i++) { 
+                            $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                               $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
+                              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                             }
                         }
                         // save to storage;

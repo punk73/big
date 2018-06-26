@@ -14,5 +14,6 @@ class Detail extends Model
     	'seq_start',
     	'seq_end',
     	'qty',
+    	'schedule_id'
     ];
 }
