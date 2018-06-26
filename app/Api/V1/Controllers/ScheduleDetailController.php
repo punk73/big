@@ -141,7 +141,11 @@ class ScheduleDetailController extends Controller
 
                 }
                 // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
-            }            
+            }      
+
+            if ($request->prod_no != null && $request->prod_no != '') {
+                $models = $models->where('model_details.prod_no', $request->prod_no );
+            }      
         // End Search
 
     	$models = $models
@@ -247,8 +251,9 @@ class ScheduleDetailController extends Controller
                         # code...
                         $detail->qty = $schedule->qty;
                         $detail->seq_start = $self->toHexa(1);
-                        $seq_end = $detail->seq_start + ($schedule->qty - 1);
-                        $detail->seq_end = $self->toHexa($seq_end) ; 
+                        // seq end dikurang satu karena hitungan pertama itu diitung. 
+                        $seq_end = $self->toDecimal($detail->seq_start) + ($schedule->qty - 1);
+                        $detail->seq_end = $self->toHexa($seq_end) ;
 
                         $detail->save();
 
@@ -258,17 +263,23 @@ class ScheduleDetailController extends Controller
                         // $schedule->save();
                     }
                 }else {
-                    // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
                     if ($schedule->qty != 0) {
                         //yg masuk kesini, artinya yang schedulenya dipecah. satu prod number, tp schedule 
                         //nya dipisah pisah. that's why seq start nya ambil dari seq end record sebelumnya.
-                        $newDetail = Detail::firstOrNew([
+                        
+                        // harus cek dulu apakah ini value nya beda atau memang data yg sebelumnya.
+                        // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
+                        $newSeqStart = $self->toHexa( $self->toDecimal($detail->seq_end) + 1 );
+                        $newSeqEnd = $self->toHexa( $self->toDecimal( $newSeqStart ) + ($schedule->qty - 1) );
+
+                        $newDetail = Detail::orderBy('id', 'desc' )->firstOrNew([
                             'model_detail_id' => $modelDetail->id,
                             'start_serial' => $schedule->start_serial,
                             'lot_size' => $schedule->lot_size,
                             'qty' => $schedule->qty,
-                            'seq_start' => $self->toHexa($detail->seq_end),
-                            'seq_end' => $self->toHexa( $detail->seq_end + ($schedule->qty - 1) )
+                            'seq_start' => $newSeqStart , //it's already hexadecimal
+                            'seq_end' => $newSeqEnd //dont need to 
+                            //minus 1 because
                         ]);
 
                         $newDetail->save();
@@ -311,7 +322,6 @@ class ScheduleDetailController extends Controller
                     //reset array schedule
                     $arraySchedule = [];
                 }
-
             }
 
             // changes object to array;
@@ -631,7 +641,6 @@ class ScheduleDetailController extends Controller
                         // save to storage;
                         Storage::put($fullpath, $content );    
                     }
-
                 }
 
                 $headers = [
