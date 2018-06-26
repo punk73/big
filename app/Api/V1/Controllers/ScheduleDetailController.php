@@ -611,8 +611,8 @@ class ScheduleDetailController extends Controller
 
                     if (!Storage::exists($fullpath)) {
                         $content = '';
-                        $cavityCode = str_pad( $cavity , 2, '0', STR_PAD_LEFT );
                         for ($i=1; $i <= $cavity ; $i++) { 
+                            $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                             for ($j=$seqStart; $j <= $seqEnd ; $j++) { 
                               $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
                               $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;       
