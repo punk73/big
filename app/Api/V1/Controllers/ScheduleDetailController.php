@@ -150,6 +150,7 @@ class ScheduleDetailController extends Controller
 
     	$models = $models
         ->orderBy('schedule_details.id', 'desc')
+
         ->paginate($limit);
     	return $models;
     }
@@ -180,8 +181,9 @@ class ScheduleDetailController extends Controller
         // generate code
         $self = $this;
         
-        $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
-        $masterScheduleId = $masterSchedule->id;
+        /*$masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
+        $masterScheduleId = $masterSchedule->id;*/
+        $masterScheduleId = $this->getLatestScheduleId();
 
         // return $masterScheduleId;
 
@@ -460,7 +462,15 @@ class ScheduleDetailController extends Controller
         return ScheduleDetail::where('schedule_id','=', null )->exists();
     }
 
+    //get latest schedule id
+    private function getLatestScheduleId(){
+        $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
+        return $masterSchedule->id;
+    }
+
     private function getJoinedSchedule(){
+        
+
         $schedule = ScheduleDetail::select([
             'schedule_details.*',
 
@@ -504,8 +514,8 @@ class ScheduleDetailController extends Controller
             $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
             $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
             $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
-        });
-
+        })
+        ->where('details.schedule_id', $this->getLatestScheduleId() );
         return $schedule;
     }
 

@@ -12,48 +12,7 @@ class HistoryController extends Controller
 {
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	$models = ScheduleHistory::select([
-            'schedule_histories.id',
-            'schedule_histories.schedule_id',
-            'schedule_histories.lot_size',
-            // 'schedule_histories.code',
-            'schedule_histories.seq_start',
-            'schedule_histories.seq_end',
-            'schedule_histories.line',
-            'schedule_histories.start_serial',
-            'schedule_histories.prod_no',
-            'schedule_histories.rev_date',
-
-            'models.code as model_code',
-            'models.name as model',
-            'models.pwbname',
-            'models.cavity',
-            'models.pwbno',
-            'models.process',
-
-            'model_details.code as detail_code',
-        ])
-        ->leftJoin('models', function($join){
-            $join->on('schedule_histories.model', '=', 'models.name');
-            $join->on('schedule_histories.pwbno', '=', 'models.pwbno');
-            $join->on('schedule_histories.pwbname', '=', 'models.pwbname');
-            $join->on('schedule_histories.process', '=', 'models.process');
-
-        })
-        ->leftJoin('model_details', function($join){
-            $join->on('model_details.model_id', '=', 'models.id');
-            $join->on('model_details.prod_no', '=', 'schedule_histories.prod_no');
-
-        })
-        ->leftJoin('details', function ($join){
-            $join->on('model_details.id','=','details.model_detail_id');
-            $join->on('schedule_histories.start_serial','=','details.start_serial');
-            $join->on('schedule_histories.lot_size','=','details.lot_size');
-            $join->on( 'schedule_histories.qty','=', 'details.qty');
-            $join->on( 'schedule_histories.start_serial','=', 'details.start_serial');
-            $join->on( 'schedule_histories.seq_start','=', 'details.seq_start');
-            $join->on( 'schedule_histories.seq_end','=', 'details.seq_end');
-        });    	
+    	$models = $this->getJoinHistory();    	
 
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
@@ -128,5 +87,54 @@ class HistoryController extends Controller
 
     	$models = $models->paginate($limit);
     	return $models;
+    }
+
+    private function getJoinHistory(){
+        return ScheduleHistory::select([
+            'schedule_histories.id',
+            'schedule_histories.schedule_id',
+            'schedule_histories.lot_size',
+            // 'schedule_histories.code',
+            'schedule_histories.seq_start',
+            'schedule_histories.seq_end',
+            'schedule_histories.line',
+            'schedule_histories.start_serial',
+            'schedule_histories.prod_no',
+            'schedule_histories.rev_date',
+
+            'models.code as model_code',
+            'models.name as model',
+            'models.pwbname',
+            'models.cavity',
+            'models.pwbno',
+            'models.process',
+
+            'model_details.code as detail_code',
+        ])
+        ->leftJoin('models', function($join){
+            $join->on('schedule_histories.model', '=', 'models.name');
+            $join->on('schedule_histories.pwbno', '=', 'models.pwbno');
+            $join->on('schedule_histories.pwbname', '=', 'models.pwbname');
+            $join->on('schedule_histories.process', '=', 'models.process');
+        })
+        ->leftJoin('model_details', function($join){
+            $join->on('model_details.model_id', '=', 'models.id');
+            $join->on('model_details.prod_no', '=', 'schedule_histories.prod_no');
+        })
+        ->leftJoin('details', function ($join){
+            $join->on('model_details.id','=','details.model_detail_id');
+            $join->on('schedule_histories.start_serial','=','details.start_serial');
+            $join->on('schedule_histories.lot_size','=','details.lot_size');
+            $join->on( 'schedule_histories.qty','=', 'details.qty');
+            $join->on( 'schedule_histories.start_serial','=', 'details.start_serial');
+            $join->on( 'schedule_histories.seq_start','=', 'details.seq_start');
+            $join->on( 'schedule_histories.seq_end','=', 'details.seq_end');
+        })
+        ->where('details.schedule_id', $this->getLatestScheduleId() );;
+    }
+
+    private function getLatestScheduleId(){
+        $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
+        return $masterSchedule->id;
     }
 }
