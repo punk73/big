@@ -90,7 +90,9 @@ class HistoryController extends Controller
     }
 
     private function getJoinHistory(){
-        return ScheduleHistory::select([
+        $schedule_id =  $this->getLatestScheduleId();
+        
+        $history = ScheduleHistory::select([
             'schedule_histories.id',
             'schedule_histories.schedule_id',
             'schedule_histories.lot_size',
@@ -129,12 +131,22 @@ class HistoryController extends Controller
             $join->on( 'schedule_histories.start_serial','=', 'details.start_serial');
             $join->on( 'schedule_histories.seq_start','=', 'details.seq_start');
             $join->on( 'schedule_histories.seq_end','=', 'details.seq_end');
-        })
-        ->where('details.schedule_id', $this->getLatestScheduleId() );;
+        });
+
+        if ($schedule_id != null) {
+            $history = $history->where('details.schedule_id', $this->getLatestScheduleId() );
+        }
+
+        return $history;
     }
 
     private function getLatestScheduleId(){
         $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
+
+        if ($masterSchedule == null ) {
+            return null;
+        }
+
         return $masterSchedule->id;
     }
 }
