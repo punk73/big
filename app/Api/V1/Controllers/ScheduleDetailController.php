@@ -25,8 +25,12 @@ class ScheduleDetailController extends Controller
     protected $schedule_filename = 'schedule_code_';
 
     public function index(Request $request){
+        $scheduleId = $this->getLatestScheduleId();
+
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
         $models = $this->getJoinedSchedule();    	
+
+        // return $this->getLatestScheduleId();
 
         // Search Query
             if ($request->name != null && $request->name != '' ) {
@@ -147,10 +151,13 @@ class ScheduleDetailController extends Controller
                 $models = $models->where('model_details.prod_no', $request->prod_no );
             }      
         // End Search
+        
+        if ($scheduleId!= null) {
+            $models = $models->where('details.schedule_id', $scheduleId );
+        }
 
     	$models = $models
         ->orderBy('schedule_details.id', 'desc')
-
         ->paginate($limit);
     	return $models;
     }
@@ -465,7 +472,11 @@ class ScheduleDetailController extends Controller
     //get latest schedule id
     private function getLatestScheduleId(){
         $masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
-        return $masterSchedule->id;
+        if ($masterSchedule!=null) {
+            return $masterSchedule->id;
+        }else{
+            return null;
+        }
     }
 
     private function getJoinedSchedule(){
@@ -494,6 +505,7 @@ class ScheduleDetailController extends Controller
             'details.seq_start as details_seq_start',
             'details.seq_end as details_seq_end',
             'details.qty as details_qty',
+            'details.schedule_id as details_schedule_id',
 
         ])
         ->leftJoin('models', function($join){
@@ -514,8 +526,9 @@ class ScheduleDetailController extends Controller
             $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
             $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
             $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
-        })
-        ->where('details.schedule_id', $this->getLatestScheduleId() );
+        });
+
+        
         return $schedule;
     }
 
