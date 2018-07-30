@@ -49,42 +49,44 @@ $api->version('v1', function (Router $api) {
     });
 
     $api->group(['prefix' => 'models'], function(Router $api){
-            $api->get('/', 'App\\Api\\V1\\Controllers\\ModelController@index' );
-            $api->get('/download', 'App\\Api\\V1\\Controllers\\ModelController@download' );
-            $api->post('/', 'App\\Api\\V1\\Controllers\\ModelController@store' );
-            $api->post('/upload', 'App\\Api\\V1\\Controllers\\ModelController@upload' );
-            $api->post('/process', 'App\\Api\\V1\\Controllers\\ModelController@process' );
-            $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@update' );
-            $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@delete' );
+        $api->get('/test', 'App\\Api\\V1\\Controllers\\ModelController@test' );
+        
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ModelController@index' );
+        $api->get('/download', 'App\\Api\\V1\\Controllers\\ModelController@download' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\ModelController@store' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ModelController@upload' );
+        $api->post('/process', 'App\\Api\\V1\\Controllers\\ModelController@process' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@delete' );
 
-            $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@show' );
-        });
+        $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ModelController@show' );
+    });
 
-        $api->group(['prefix' => 'schedules'], function(Router $api){
-            $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleController@index' );
-            $api->get('/dates', 'App\\Api\\V1\\Controllers\\ScheduleController@dates' );
-            $api->post('/', 'App\\Api\\V1\\Controllers\\ScheduleController@store' );
-            $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleController@upload' );
-            $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@update' );
-            $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@delete' );
-            $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@show' );
-        });    
+    $api->group(['prefix' => 'schedules'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleController@index' );
+        $api->get('/dates', 'App\\Api\\V1\\Controllers\\ScheduleController@dates' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\ScheduleController@store' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleController@upload' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@delete' );
+        $api->get('/{id}', 'App\\Api\\V1\\Controllers\\ScheduleController@show' );
+    });    
 
-        $api->group(['prefix' => 'schedule_details'], function(Router $api){
-            $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
-            $api->get('/download', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@downloadSchedule' );
+    $api->group(['prefix' => 'schedule_details'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@index' );
+        $api->get('/download', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@downloadSchedule' );
 
-            $api->get('/preprocess', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@preprocess' );
-            $api->get('/download/{id}', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@download' );
+        $api->get('/preprocess', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@preprocess' );
+        $api->get('/download/{id}', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@download' );
 
-            $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
-            $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@upload' );
-        });
+        $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
+        $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@upload' );
+    });
 
-        $api->group(['prefix' => 'histories'], function(Router $api){
-            $api->get('/', 'App\\Api\\V1\\Controllers\\HistoryController@index' );
-            // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
-        });
+    $api->group(['prefix' => 'histories'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\HistoryController@index' );
+        // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
+    });
     
 
 });

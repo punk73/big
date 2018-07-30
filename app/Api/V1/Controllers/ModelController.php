@@ -449,4 +449,10 @@ class ModelController extends Controller
         fclose($fp);
     }
 
+    public function test(){
+        $model = Mastermodel::all();
+        return $model;
+
+    }
+
 }
