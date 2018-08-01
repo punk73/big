@@ -180,6 +180,17 @@ class ScheduleDetailControllerTest extends TestCase
     public function testGenerateCodeSuccess(){
         $scheduleController = new ScheduleDetailController;
 
+        $schedule = (object) [
+            'model_code' => '00053' ,
+            'models_cavity' => 2,
+            'models_side' => 'A',
+            'prod_no_code' => '001' ,
+            'seq_start' => '001',
+            'seq_end' => '009',
+        ];
+
+        $generatedType='board_id';
+
         /*$result = '00053IA00001001
         00053IA00001002
         00053IA00001003
@@ -187,23 +198,16 @@ class ScheduleDetailControllerTest extends TestCase
         00053IA00001005
         00053IA00001006
         00053IA00001007';*/
-        $schedule = (object) [
-            'model_code' => '00053' ,
-            'models_cavity' => 2,
-            'models_side' => 'A',
-            'prod_no_code' => '001' ,
-            'seq_start' => 1,
-            'seq_end' => 20,
-        ];
 
-        $generatedType='board_id';
         $result = $scheduleController->generateCode($generatedType, $schedule );
 
         $arrayResult = explode(PHP_EOL, $result );
 
         $this->assertRegexp('/00053IA00001007/', $result );
-        $this->assertEquals(20, count($arrayResult));
-        
+        fwrite(STDOUT, var_dump($arrayResult) ); 
+        // sebetulnya perulangan nya 9, tapi karena yg terakhit tetep contain enter, jd ketika di parse ke array, index nya bertambah satu //remember that;
+        $this->assertEquals( 10, count($arrayResult));
+
     }
 
 }
