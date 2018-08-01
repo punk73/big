@@ -12,6 +12,7 @@ use App\ScheduleHistory;
 use App\Api\V1\Controllers\CsvController;
 use App\Api\V1\Controllers\ScheduleController;
 use Dingo\Api\Exception\ResourceException;
+use App\Api\V1\Requests\ScheduleDetailRequest;
 use Validator;
 use File;
 use Storage;
@@ -351,7 +352,7 @@ class ScheduleDetailController extends Controller
         // copy schedule_details into history
     }
 
-    public function upload(Request $request){
+    public function upload(ScheduleDetailRequest $request){
         if ($request->hasFile('file')) {
 
             # kalau bukan csv atau txt, return false;
@@ -432,10 +433,6 @@ class ScheduleDetailController extends Controller
             ];
             // return true;
         }
-
-        return [
-            'message' => 'no file found'
-        ];
     }
 
     // function ini dipakai di function process.
