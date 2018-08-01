@@ -13,6 +13,8 @@ use App\TestCase;
 use Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use App\Api\V1\Controllers\ScheduleDetailController;
+
 
 class ScheduleDetailControllerTest extends TestCase
 {
@@ -137,6 +139,17 @@ class ScheduleDetailControllerTest extends TestCase
         ]);
     }
 
+    private function simulateProcessAjax(){
+        // send ajax post to trigger process method
+        $response = $this->post($this->endpoint . '/process', [
+            'release_date' => '2018-07-01',
+            'effective_date' => '2018-07-03',
+            'end_effective_date' => '2018-07-25',
+        ]);
+
+        return $response;
+    }
+
     public function testProcessSuccess(){
         $this->simulateUploadFile();
 
@@ -144,11 +157,7 @@ class ScheduleDetailControllerTest extends TestCase
         $this->assertEquals(0, $mastermodel, 'pre condition. it should be empty' );
 
 
-        $response = $this->post($this->endpoint . '/process', [
-            'release_date' => '2018-07-01',
-            'effective_date' => '2018-07-03',
-            'end_effective_date' => '2018-07-25',
-        ]);
+        $response = $this->simulateProcessAjax();
 
         $response->assertJsonStructure([
             'success'
@@ -169,6 +178,31 @@ class ScheduleDetailControllerTest extends TestCase
     }
 
     public function testGenerateCodeSuccess(){
+        $scheduleController = new ScheduleDetailController;
+
+        /*$result = '00053IA00001001
+        00053IA00001002
+        00053IA00001003
+        00053IA00001004
+        00053IA00001005
+        00053IA00001006
+        00053IA00001007';*/
+        $schedule = (object) [
+            'model_code' => '00053' ,
+            'models_cavity' => 2,
+            'models_side' => 'A',
+            'prod_no_code' => '001' ,
+            'seq_start' => 1,
+            'seq_end' => 20,
+        ];
+
+        $generatedType='board_id';
+        $result = $scheduleController->generateCode($generatedType, $schedule );
+
+        $arrayResult = explode(PHP_EOL, $result );
+
+        $this->assertRegexp('/00053IA00001007/', $result );
+        $this->assertEquals(20, count($arrayResult));
         
     }
 

@@ -594,19 +594,10 @@ class ScheduleDetailController extends Controller
 
             //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
             if ($validator->fails() ) {
-                throw new ResourceException("Schedule not generated yet!", $validator->errors() );
+                throw new ResourceException("Something Wrong, read Error below!", $validator->errors() );
             }
 
-            $modelCode = $schedule->model_code;
-            $countryCode = 'I';
-            $cavity = $schedule->models_cavity;
-            $side = $schedule->models_side;
-            $lotNo = $schedule->prod_no_code;
-            $seqStart = $this->toDecimal($schedule->seq_start);
-            $seqEnd = $this->toDecimal($schedule->seq_end);
-
             if ($request->regenerate != null && $request->regenerate == 'true') {
-                
                 $this->deleteGeneratedFile($id);
             }
 
@@ -626,16 +617,7 @@ class ScheduleDetailController extends Controller
 
                         //generate file
                         //generate board id nya aja. (cavity nya = 00)
-                        
-                        /*$cavityCode='00';
-                        $content = '';
-                        for ($i= $seqStart; $i <= $seqEnd; $i++) { 
-                          // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
-                          $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-                          $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
-                        }*/
-
-                        $content = $this->generateCode($generatedType);
+                        $content = $this->generateCode($generatedType, $schedule);
 
                         //save to Storage
                         Storage::put($fullpath, $content );    
@@ -647,15 +629,7 @@ class ScheduleDetailController extends Controller
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)) {
-                        /*$content = '';
-                        for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
-                            for ($i=1; $i <= $cavity ; $i++) { 
-                            $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
-                              $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
-                            }
-                        }*/
-                        $content = $this->generateCode($generatedType);
+                        $content = $this->generateCode($generatedType, $schedule );
                         // save to storage;
                         Storage::put($fullpath, $content );    
                     }
@@ -666,16 +640,7 @@ class ScheduleDetailController extends Controller
 
                     if (!Storage::exists($fullpath)) {
                         
-                        $content = $this->generateCode($generatedType);
-
-                        /*for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
-                            for ($cav=0; $cav <= $cavity ; $cav++) { 
-                                $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
-                                $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-                                $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
-                            }
-                        }*/
-
+                        $content = $this->generateCode($generatedType, $schedule );
                         // save to storage;
                         Storage::put($fullpath, $content );    
                     }
@@ -695,7 +660,16 @@ class ScheduleDetailController extends Controller
         }
     }
 
-    public function generateCode($generatedType='board_id'){
+    public function generateCode($generatedType='board_id', $schedule ){
+
+        $modelCode = $schedule->model_code;
+        $countryCode = 'I';
+        $cavity = $schedule->models_cavity;
+        $side = $schedule->models_side;
+        $lotNo = $schedule->prod_no_code;
+        $seqStart = $this->toDecimal($schedule->seq_start);
+        $seqEnd = $this->toDecimal($schedule->seq_end);
+
         $content = '';
         if($generatedType = 'board_id'){
             $cavityCode='00';
