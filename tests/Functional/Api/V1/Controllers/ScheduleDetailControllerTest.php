@@ -131,23 +131,4 @@ class ScheduleDetailControllerTest extends TestCase
     }
 
 
-
-    /*public function testLoginWithReturnsWrongCredentialsError()
-    {
-        $this->post('api/auth/login', [
-            'email' => 'unknown@email.com',
-            'password' => '123456'
-        ])->assertJsonStructure([
-            'error'
-        ])->assertStatus(403);
-    }
-
-    public function testLoginWithReturnsValidationError()
-    {
-        $this->post('api/auth/login', [
-            'email' => 'test@email.com'
-        ])->assertJsonStructure([
-            'error'
-        ])->assertStatus(422);
-    }*/
 }
