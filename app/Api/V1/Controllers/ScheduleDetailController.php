@@ -520,7 +520,6 @@ class ScheduleDetailController extends Controller
             $join->on('schedule_details.start_serial','=','details.start_serial');
             $join->on('schedule_details.lot_size','=','details.lot_size');
             $join->on( 'schedule_details.qty','=', 'details.qty');
-            $join->on( 'schedule_details.start_serial','=', 'details.start_serial');
             $join->on( 'schedule_details.seq_start','=', 'details.seq_start');
             $join->on( 'schedule_details.seq_end','=', 'details.seq_end');
         });
