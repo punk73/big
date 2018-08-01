@@ -626,13 +626,16 @@ class ScheduleDetailController extends Controller
 
                         //generate file
                         //generate board id nya aja. (cavity nya = 00)
-                        $cavityCode='00';
+                        
+                        /*$cavityCode='00';
                         $content = '';
                         for ($i= $seqStart; $i <= $seqEnd; $i++) { 
                           // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
                           $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                           $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
-                        }
+                        }*/
+
+                        $content = $this->generateCode($generatedType);
 
                         //save to Storage
                         Storage::put($fullpath, $content );    
@@ -644,14 +647,15 @@ class ScheduleDetailController extends Controller
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)) {
-                        $content = '';
+                        /*$content = '';
                         for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
                             for ($i=1; $i <= $cavity ; $i++) { 
                             $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                               $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
                               $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                             }
-                        }
+                        }*/
+                        $content = $this->generateCode($generatedType);
                         // save to storage;
                         Storage::put($fullpath, $content );    
                     }
@@ -662,15 +666,15 @@ class ScheduleDetailController extends Controller
 
                     if (!Storage::exists($fullpath)) {
                         
-                        $content = '';
+                        $content = $this->generateCode($generatedType);
 
-                        for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
+                        /*for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
                             for ($cav=0; $cav <= $cavity ; $cav++) { 
                                 $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
                                 $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                                 $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                             }
-                        }
+                        }*/
 
                         // save to storage;
                         Storage::put($fullpath, $content );    
@@ -691,8 +695,34 @@ class ScheduleDetailController extends Controller
         }
     }
 
-    public function generateCode(){
-        
+    public function generateCode($generatedType='board_id'){
+        $content = '';
+        if($generatedType = 'board_id'){
+            $cavityCode='00';
+            for ($i= $seqStart; $i <= $seqEnd; $i++) { 
+              // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
+              $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
+              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+            }
+        }else if($generatedType = 'cavity_id'){
+            for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
+                for ($i=1; $i <= $cavity ; $i++) { 
+                $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
+                  $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
+                  $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                }
+            }
+        }else {
+            for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
+                for ($cav=0; $cav <= $cavity ; $cav++) { 
+                    $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
+                    $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
+                    $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                }
+            }
+        }
+
+        return $content;
     }
 
     private function toHexa($no){
