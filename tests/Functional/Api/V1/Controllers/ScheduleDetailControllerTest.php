@@ -6,6 +6,7 @@ use Hash;
 use App\User;
 use App\Schedule;
 use App\ScheduleDetail;
+use App\ScheduleHistory;
 use App\Mastermodel;
 use App\Detail;
 use App\TestCase;
@@ -105,5 +106,70 @@ class ScheduleDetailControllerTest extends TestCase
         ]);        
     }
 
+    public function testProcessMethodWithoutProperParameter(){
+        $response = $this->post($this->endpoint . '/process', [] );
+
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'errors' => [
+                'release_date',
+                'effective_date',
+                'end_effective_date',
+            ]
+        ])
+        ->isOk();
+    }
+
+    public function testProcessWithProperParameterButWithoutUploadSchedule(){
+        $response = $this->post($this->endpoint . '/process', [
+            'release_date' => '2018-07-01',
+            'effective_date' => '2018-07-03',
+            'end_effective_date' => '2018-07-25',
+        ]);
+
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'errors' => [
+                'schedule_code'
+            ]
+        ]);
+    }
+
+    public function testProcessSuccess(){
+        $this->simulateUploadFile();
+
+        $mastermodel = count( Mastermodel::all());
+        $this->assertEquals(0, $mastermodel, 'pre condition. it should be empty' );
+
+
+        $response = $this->post($this->endpoint . '/process', [
+            'release_date' => '2018-07-01',
+            'effective_date' => '2018-07-03',
+            'end_effective_date' => '2018-07-25',
+        ]);
+
+        $response->assertJsonStructure([
+            'success'
+        ])->assertJson([
+            'success' =>true
+        ]);
+
+
+        $schedule = count( ScheduleDetail::all() );
+        $history = count( ScheduleHistory::all() );
+        // cek semua content shcedule sudah tercopy ke history
+        $this->assertEquals($schedule, $history );
+
+        // cek tidak ada lagi schedule detail yg tidak memiliki code
+        $mastermodel = count( Mastermodel::all());
+        $this->assertGreaterThan(0, $mastermodel);
+
+    }
+
+    public function testGenerateCodeSuccess(){
+        
+    }
 
 }

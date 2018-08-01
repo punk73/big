@@ -12,7 +12,10 @@ use App\ScheduleHistory;
 use App\Api\V1\Controllers\CsvController;
 use App\Api\V1\Controllers\ScheduleController;
 use Dingo\Api\Exception\ResourceException;
+use Dingo\Api\Exception\UpdateResourceFailedException;
 use App\Api\V1\Requests\ScheduleDetailRequest;
+use App\Api\V1\Requests\ScheduleDetailProcessRequest;
+
 use Validator;
 use File;
 use Storage;
@@ -163,12 +166,16 @@ class ScheduleDetailController extends Controller
     	return $models;
     }
 
-    public function process(Request $request){
+    public function process(ScheduleDetailProcessRequest $request){
         // cek apakah sudah di generate sebelumnya.
         if ( $this->isGenerated() ) {
-            return [
+            /*return [
                 'message' => 'Schedule Code Already Generated or Schedule Not found!'
-            ]; //sudah di generate semua.
+            ]; //sudah di generate semua.*/
+            throw new UpdateResourceFailedException("Schedule Code Already Generated or Schedule Not found!", [
+                'schedule_code' => 'Schedule Code Already Generated or Schedule Not found!',
+            ] );
+            
         }
         
         // jika tidak punya schedule id, maka masuk sini.
@@ -345,8 +352,9 @@ class ScheduleDetailController extends Controller
         });
 
         return [
+            'success' => $scheduleDetail,
             'count' => count($scheduleDetail),
-            'data'  => $scheduleDetail
+            'data'  => $scheduleDetail,
         ];
 
         // copy schedule_details into history
@@ -681,6 +689,10 @@ class ScheduleDetailController extends Controller
 
             }
         }
+    }
+
+    public function generateCode(){
+        
     }
 
     private function toHexa($no){
