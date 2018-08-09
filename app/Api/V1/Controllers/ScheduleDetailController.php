@@ -156,8 +156,15 @@ class ScheduleDetailController extends Controller
             }      
         // End Search
         
+        // it's mean to get only latest schedule id, but it make a bug;
+        // the first time we upload the file, no schedule details has schedule_id, so no record shown;
         if ($scheduleId!= null) {
-            $models = $models->where('details.schedule_id', $scheduleId );
+            $checkExists = $this->getJoinedSchedule();
+            $checkExists = $checkExists->where('details.schedule_id', $scheduleId )->exists();
+            // cek dulu ini fresh upload bukan, kalo iya, maka gausah masuk kesini;
+            if($checkExists){
+                $models = $models->where('details.schedule_id', $scheduleId );
+            }
         }
 
     	$models = $models
@@ -699,12 +706,24 @@ class ScheduleDetailController extends Controller
         return $content;
     }
 
+    /*
+    * due to changing on requirement, toHexa method is no longer do what it does
+    * it just changing int into string with 0 prefix
+    * if $no == 1, then it would return '0001'
+    */
+
     private function toHexa($no){
-        return str_pad( dechex($no) , 3, '0', STR_PAD_LEFT );
+        return str_pad( $no , 4, '0', STR_PAD_LEFT );
     }
 
-    private function toDecimal($hexa){
-        return hexdec($hexa);
+    /*
+    * to decimal is converting string into decimal
+    * exp: '0001' will return 1;
+    *
+    */
+
+    private function toDecimal($string){
+        return (int) $string;
     }
 
     // dipakai juga di modelController
