@@ -43,7 +43,7 @@ class LoginControllerTest extends TestCase
             'email' => 'unknown@email.com',
             'password' => '123456'
         ])->assertJsonStructure([
-            'error'
+            'success'
         ])->assertStatus(403);
     }
 
@@ -52,7 +52,7 @@ class LoginControllerTest extends TestCase
         $this->post('api/auth/login', [
             'email' => 'test@email.com'
         ])->assertJsonStructure([
-            'error'
+            'success'
         ])->assertStatus(422);
     }
 }

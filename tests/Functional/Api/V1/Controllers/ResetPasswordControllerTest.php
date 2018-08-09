@@ -68,7 +68,7 @@ class ResetPasswordControllerTest extends TestCase
             'password' => 'mynewpass',
             'password_confirmation' => 'mynewpass'
         ])->assertJsonStructure([
-            'error'
+            'success'
         ])->assertStatus(500);
     }
 
@@ -79,7 +79,7 @@ class ResetPasswordControllerTest extends TestCase
             'token' => 'my_super_secret_code',
             'password' => 'mynewpass'
         ])->assertJsonStructure([
-            'error'
+            'success'
         ])->assertStatus(422);
     }
 }

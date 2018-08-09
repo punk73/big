@@ -185,8 +185,8 @@ class ScheduleDetailControllerTest extends TestCase
             'models_cavity' => 2,
             'models_side' => 'A',
             'prod_no_code' => '001' ,
-            'seq_start' => '001',
-            'seq_end' => '009',
+            'seq_start' => '0001',
+            'seq_end' => '0050',
         ];
 
         $generatedType='board_id';
@@ -202,11 +202,12 @@ class ScheduleDetailControllerTest extends TestCase
         $result = $scheduleController->generateCode($generatedType, $schedule );
 
         $arrayResult = explode(PHP_EOL, $result );
-
-        $this->assertRegexp('/00053IA00001007/', $result );
+        /*update, last digit is 4 digit integer; not 3 digit hexa;*/
+        $this->assertRegexp('/00053IA000010007/', $result );
+        $this->assertRegexp('/00053IA000010030/', $result );
         fwrite(STDOUT, var_dump($arrayResult) ); 
         // sebetulnya perulangan nya 9, tapi karena yg terakhit tetep contain enter, jd ketika di parse ke array, index nya bertambah satu //remember that;
-        $this->assertEquals( 10, count($arrayResult));
+        $this->assertEquals( 51, count($arrayResult));
 
     }
 

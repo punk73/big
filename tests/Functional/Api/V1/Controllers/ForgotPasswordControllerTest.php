@@ -37,7 +37,9 @@ class ForgotPasswordControllerTest extends TestCase
         $this->post('api/auth/recovery', [
             'email' => 'unknown@email.com'
         ])->assertJsonStructure([
-            'error'
+            'success'
+        ])->assertJson([
+            'success'=> false
         ])->assertStatus(404);
     }
 
@@ -46,7 +48,9 @@ class ForgotPasswordControllerTest extends TestCase
         $this->post('api/auth/recovery', [
             'email' => 'i am not an email'
         ])->assertJsonStructure([
-            'error'
+            'success'
+        ])->assertJson([
+            'success'=> false
         ])->assertStatus(422);
     }
 }
