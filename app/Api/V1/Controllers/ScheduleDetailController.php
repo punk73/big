@@ -606,10 +606,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->regenerate != null && $request->regenerate == 'true') {
                 $this->deleteGeneratedFile($id);
+
             }
 
             // make file here.
             $generatedType = $request->generated_type;
+
             if ($generatedType != null && $generatedType != '' ) {
                 // cek generate type board_id or cavity id;
                 // cek apakah file sudah ada. kalau ada, langsung ambil.
@@ -631,6 +633,7 @@ class ScheduleDetailController extends Controller
                         // return Storage::download($fullpath);
                     }
                 }else if($generatedType == 'cavity_id'){
+                    
                     //generate cavity id;
                     $filename = $this->cavity_filename . $id . '.txt';
                     $fullpath = $path . $filename;
@@ -641,6 +644,7 @@ class ScheduleDetailController extends Controller
                         Storage::put($fullpath, $content );    
                     }
                 }else {
+
                     // ini yang all
                     $filename = $this->schedule_filename .$id.'.txt';
                     $fullpath = $path.$filename;
@@ -678,19 +682,21 @@ class ScheduleDetailController extends Controller
         $seqEnd = $this->toDecimal($schedule->seq_end);
 
         $content = '';
-        if($generatedType = 'board_id'){
+        if($generatedType == 'board_id'){
             $cavityCode='00';
             for ($i= $seqStart; $i <= $seqEnd; $i++) { 
               // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
               $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
               $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
             }
-        }else if($generatedType = 'cavity_id'){
+        
+        }else if($generatedType == 'cavity_id'){
             for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
                 for ($i=1; $i <= $cavity ; $i++) { 
-                $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
-                  $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                  $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                    $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
+                    $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
+                    $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                    
                 }
             }
         }else {
@@ -701,6 +707,7 @@ class ScheduleDetailController extends Controller
                     $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                 }
             }
+
         }
 
         return $content;
