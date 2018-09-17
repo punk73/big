@@ -105,7 +105,7 @@ class ScheduleDetailController extends Controller
                 //10-12 lot number
                 $lotNo = substr($code, 9, 3);
                 //13-15 seq number
-                $seqNo = substr($code, 12,3);
+                $seqNo = substr($code, 12,4);
                 $seqNo = $seqNo;
 
                 // return [
