@@ -674,7 +674,7 @@ class ScheduleDetailController extends Controller
     public function generateCode($generatedType='board_id', $schedule ){
 
         $modelCode = $schedule->model_code;
-        $countryCode = 'I';
+        $countryCode = '7';
         $cavity = $schedule->models_cavity;
         $side = $schedule->models_side;
         $lotNo = $schedule->prod_no_code;
