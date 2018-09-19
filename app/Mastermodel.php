@@ -19,6 +19,7 @@ class Mastermodel extends Model
     	'process',
     	'cavity',
     	'side',
+        'ynumber',
 
     ];
 

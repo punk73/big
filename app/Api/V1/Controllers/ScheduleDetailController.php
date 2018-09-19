@@ -233,12 +233,14 @@ class ScheduleDetailController extends Controller
                 $pwbno = $schedule->pwbno;
                 $pwbname = $schedule->pwbname;
                 $process = $schedule->process;
+                $ynumber = $schedule->ynumber;
 
                 $masterModel = Mastermodel::firstOrNew([
                     'name' => $name,
                     'pwbno' => $pwbno,
                     'pwbname' => $pwbname,
                     'process' => $process,
+                    'ynumber' => $ynumber, 
                 ]);
 
                 if (!$masterModel->exists) {
@@ -802,7 +804,9 @@ class ScheduleDetailController extends Controller
         fclose($fp);
     }
 
-
+    public function test(){
+        return Mastermodel::all();
+    }
 
 
 }
