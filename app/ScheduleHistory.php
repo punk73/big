@@ -18,6 +18,7 @@ class ScheduleHistory extends Model
     	'start_serial',
     	'lot_size',
         'cavity',
+        'ynumber',
     ];
 
     public function schedule (){
