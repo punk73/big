@@ -23,6 +23,7 @@ class ModelController extends Controller
             'cavity',
             // DB::raw('concat(models.code , model_details.code) as code'),
             'models.code',
+            'models.ynumber',
             'side',
             'model_id',
             'prod_no',
