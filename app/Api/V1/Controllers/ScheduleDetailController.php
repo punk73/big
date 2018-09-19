@@ -566,6 +566,7 @@ class ScheduleDetailController extends Controller
             'process',
             'rev_date',
             'qty',
+            'ynumber',
         ];
 
         foreach ($schedule as $key => $value) {
