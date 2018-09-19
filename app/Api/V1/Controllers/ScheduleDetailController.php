@@ -805,7 +805,9 @@ class ScheduleDetailController extends Controller
     }
 
     public function test(){
-        return Mastermodel::all();
+        $masterModel = Mastermodel::first();
+        $masterModel->initCode();
+        return $masterModel;
     }
 
 
