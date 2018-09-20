@@ -5,28 +5,30 @@ namespace App\Api\V1\Controllers;
 use App\Http\Controllers\Controller; //parent contoller
 use App\Subtype;
 use Illuminate\Http\Request;
-
+use App\Api\V1\Requests\SubtypeRequest;
+use Dingo\Api\Exception\StoreResourceFailedException;
 
 class SubtypeController extends Controller
-{
+{   
+    protected $result = [
+        'success' => true,
+        'data'    => null,
+    ];
+
+    protected $allowedParameter = [
+        'name',
+        'model_id'
+    ];
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request )
     {
-        //
-    }
+        $this->result['data'] = Subtype::all();
+        return $this->result;
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -35,9 +37,16 @@ class SubtypeController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(SubtypeRequest $request)
     {
-        //
+        $subtype = new Subtype;
+        $subtype->model_id = $request->model_id;
+        $subtype->name = $request->name;
+        $subtype->save();
+        
+        $this->result['data'] = $subtype;
+
+        return $this->result;
     }
 
     /**
@@ -52,26 +61,27 @@ class SubtypeController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Subtype  $subtype
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Subtype $subtype)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Subtype  $subtype
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Subtype $subtype)
+    public function update(Request $request, $id )
     {
-        //
+        $subtype = Subtype::find($id);
+        // kalau subtype ada baru edit
+        if(!$subtype){
+            throw new StoreResourceFailedException("Subtype dengan id {$id} tidak ditemukan", [
+                'id' => $id
+            ]);
+        }
+        
+        $subtype->name = (isset($request->name))?$request->name : $subtype->name ;
+        $subtype->save();
+        $this->result['data'] = $subtype;
+
+        return $this->result;
     }
 
     /**
@@ -80,8 +90,18 @@ class SubtypeController extends Controller
      * @param  \App\Subtype  $subtype
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Subtype $subtype)
+    public function destroy($id)
     {
-        //
+        $subtype = Subtype::find($id);
+        // kalau subtype ada baru edit
+        if(!$subtype){
+            throw new StoreResourceFailedException("Subtype dengan id {$id} tidak ditemukan", [
+                'id' => $id
+            ]);
+        }
+
+        $subtype->delete();
+
+        return $this->result;
     }
 }

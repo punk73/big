@@ -90,6 +90,13 @@ $api->version('v1', function (Router $api) {
         $api->get('/', 'App\\Api\\V1\\Controllers\\HistoryController@index' );
         // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
     });
+
+    $api->group(['prefix' => 'subtypes'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\SubtypeController@index' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\SubtypeController@store' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\SubtypeController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\SubtypeController@destroy' );
+    });
     
 
 });
