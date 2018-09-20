@@ -26,9 +26,16 @@ class SubtypeController extends Controller
      */
     public function index(Request $request )
     {
-        $this->result['data'] = Subtype::all();
+        $this->result['data'] = $this->getSubtype()->get();
         return $this->result;
 
+    }
+
+    private function getSubtype(){
+        return Subtype::select([
+            'models.name as modelname',
+            'subtypes.*'
+        ])->leftJoin('models', 'models.id', '=', 'subtypes.model_id');    
     }
 
     /**
