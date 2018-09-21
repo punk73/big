@@ -264,24 +264,7 @@ class ModelController extends Controller
                     $masterModel = Mastermodel::find($model->id);
                     if ($masterModel != null) {
                         // code ga di input di program ini
-                        // $code = str_pad( dechex($model->id) , 5, '0', STR_PAD_LEFT );
-
-                        // get previous generated code
-                        $prevCode = Mastermodel::select(['code'])
-                        ->where('name', $model->name)
-                        ->where('pwbname', $model->pwbname)
-                        ->where('pwbno', $model->pwbno)
-                        ->first();
-
-                        // dengan begini akan banyak code yg terlewat, exp: 1,2,5,9 dst
-                        if ($prevCode->code != null) {
-                            $code = $prevCode->code;    
-                        }else{
-                            $generated++;
-                            $counter++;
-                            $code=str_pad( dechex($generated) , 5, '0', STR_PAD_LEFT );
-                        }
-                        $masterModel->code = $code;
+                        $masterModel->generateCode();
                         $masterModel->save();
                     }
                 }
