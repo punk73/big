@@ -327,7 +327,8 @@ class ModelController extends Controller
     		'process',
             'cavity',
             'side',
-    		'code'
+    		'code',
+            'ynumber'
     	); 
     }
 

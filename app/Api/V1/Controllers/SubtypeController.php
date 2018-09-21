@@ -50,7 +50,7 @@ class SubtypeController extends Controller
         $subtype->model_id = $request->model_id;
         $subtype->name = $request->name;
         $subtype->save();
-        
+        $subtype->withModelname();
         $this->result['data'] = $subtype;
 
         return $this->result;
