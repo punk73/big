@@ -698,7 +698,7 @@ class ScheduleDetailController extends Controller
             for ($i= $seqStart; $i <= $seqEnd; $i++) { 
               // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
               $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-              $content .= $modelCode . $countryCode . $side . $this->subtypeCode . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+              $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
             }
         
         }else if($generatedType == 'cavity_id'){
@@ -713,13 +713,13 @@ class ScheduleDetailController extends Controller
                     if(!$subtypeIsExists){
                         $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                         $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                        $content .= $modelCode . $countryCode . $side . $this->subtypeCode . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                     }else{
                         for ($i=0; $i < count($subtypes) ; $i++) {
                             $this->subtypeCode = $subtypes[$i]['name'];
                             $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                             $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                            $content .= $modelCode . $countryCode . $side . $this->subtypeCode . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                         }
                     }
                 }
@@ -737,7 +737,7 @@ class ScheduleDetailController extends Controller
                     $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                     
                     if(!$subtypeIsExists){
-                        $content .= $modelCode . $countryCode . $side . $this->subtypeCode . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                     }else {
                         for ($l=0; $l < count($subtypes) ; $l++) { 
                             $this->subtypeCode = $subtypes[$l]['name'];
@@ -746,7 +746,7 @@ class ScheduleDetailController extends Controller
                                 $this->subtypeCode = '_';    
                             }
 
-                            $content .= $modelCode . $countryCode . $side . $this->subtypeCode . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
                                 
                         }
                     }
