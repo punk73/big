@@ -95,18 +95,18 @@ class ScheduleDetailController extends Controller
                 //cek if code <= 5 character. search di model.code
 
                 // substr(string, start, length )
-                $modelCode = substr($code, 0, 5); //ambil dari index 0, sebanyak 5 karakter.
+                $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
                 //char 6th must be i as country code
-                $countryCode = substr($code, 5, 1);
+                $countryCode = substr($code, 11, 1);
                 //7 must be A or B
-                $sideCode = substr($code, 6,1);
+                $sideCode = substr($code, 12,1);
                 //char 8-9 cavity. if model  still has no cavity, then 
-                $cavityCode = substr($code, 7, 2);
+                $cavityCode = substr($code, 14, 2 );
                 $cavityCode = (int) $cavityCode;
                 //10-12 lot number
-                $lotNo = substr($code, 9, 3);
+                $lotNo = substr($code, 17, 4);
                 //13-15 seq number
-                $seqNo = substr($code, 12,4);
+                $seqNo = substr($code, 20,4);
                 $seqNo = $seqNo;
 
                 // return [
