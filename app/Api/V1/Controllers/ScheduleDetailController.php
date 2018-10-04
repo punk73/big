@@ -97,9 +97,9 @@ class ScheduleDetailController extends Controller
                 // substr(string, start, length )
                 $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
                 //char 6th must be i as country code
-                $countryCode = substr($code, 11, 1);
+                $countryCode = substr($code, 12, 1);
                 //7 must be A or B
-                $sideCode = substr($code, 12,1);
+                $sideCode = substr($code, 13,1);
                 //char 8-9 cavity. if model  still has no cavity, then 
                 $cavityCode = substr($code, 14, 2 );
                 $cavityCode = (int) $cavityCode;
