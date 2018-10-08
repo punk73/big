@@ -635,9 +635,11 @@ class ScheduleDetailController extends Controller
                 // cek generate type board_id or cavity id;
                 // cek apakah file sudah ada. kalau ada, langsung ambil.
                 $path = '\\public\\code\\';
+                
+                $filename = $arraySchedule['models_name'] .'_'. $arraySchedule['ynumber'] .'_'. $arraySchedule['models_pwbname'] .'_'. $arraySchedule['models_pwbno'] .'_'. $arraySchedule['models_process'] .'_'. $arraySchedule['models_side'] . '_';
 
                 if ($generatedType == 'board_id') {
-                    $filename = $this->board_filename . $id . '.txt';
+                    $filename .= $this->board_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)){
@@ -654,7 +656,7 @@ class ScheduleDetailController extends Controller
                 }else if($generatedType == 'cavity_id'){
                     
                     //generate cavity id;
-                    $filename = $this->cavity_filename . $id . '.txt';
+                    $filename .= $this->cavity_filename . $id . '.txt';
                     $fullpath = $path . $filename;
 
                     if (!Storage::exists($fullpath)) {
@@ -665,7 +667,7 @@ class ScheduleDetailController extends Controller
                 }else {
 
                     // ini yang all
-                    $filename = $this->schedule_filename .$id.'.txt';
+                    $filename .= $this->schedule_filename .$id.'.txt';
                     $fullpath = $path.$filename;
 
                     if (!Storage::exists($fullpath)) {
