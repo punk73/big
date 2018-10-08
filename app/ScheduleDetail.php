@@ -17,6 +17,7 @@ class ScheduleDetail extends Model
     	'prod_no',
     	'start_serial',
     	'lot_size',
-        'cavity'
+        'cavity',
+        'side'
     ];
 }

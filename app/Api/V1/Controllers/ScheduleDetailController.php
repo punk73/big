@@ -33,7 +33,7 @@ class ScheduleDetailController extends Controller
         $scheduleId = $this->getLatestScheduleId();
 
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-        $models = $this->getJoinedSchedule();    	
+        $models = $this->getJoinedSchedule();    
 
         // return $this->getLatestScheduleId();
 
@@ -344,6 +344,14 @@ class ScheduleDetailController extends Controller
                 'ynumber' => $ynumber, 
             ]);
 
+            if(isset($schedule->side)){
+                $masterModel->side = $schedule->side;
+            }
+
+            if(isset($schedule->cavity)){
+                $masterModel->cavity = $schedule->cavity;
+            }
+
             if (!$masterModel->exists) {
                 #kalau belum ada aja di save nya. gausah update.
                 $masterModel->generateCode();
@@ -612,7 +620,7 @@ class ScheduleDetailController extends Controller
 
             //cek disini apakah data sudah di generate atau belum. kalau belum, return false;
             if ($validator->fails() ) {
-                throw new ResourceException("Something Wrong, read Error below!", $validator->errors() );
+                throw new ResourceException("TOLONG KLIK TOMBOL PROSES DULU !!", $validator->errors() );
             }
 
             if ($request->regenerate != null && $request->regenerate == 'true') {
