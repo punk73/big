@@ -50,7 +50,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->pwbname != null && $request->pwbname != '' ) {
                 # code...
-                $models = $models->where('pwbname','like', $request->pwbname.'%');
+                $models = $models->where('schedule_details.pwbname','like', $request->pwbname.'%');
+            }
+
+            if ($request->side != null && $request->side != '' ) {
+                # code...
+                $models = $models->where('models.side','like', $request->side.'%');
             }
 
             if ($request->process != null && $request->process != '' ) {
