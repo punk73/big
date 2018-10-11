@@ -91,6 +91,10 @@ $api->version('v1', function (Router $api) {
         // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
     });
 
+    $api->group(['prefix' => 'dashboards'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\DashboardController@index' );
+    });
+
     $api->group(['prefix' => 'subtypes'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\SubtypeController@index' );
         $api->post('/', 'App\\Api\\V1\\Controllers\\SubtypeController@store' );

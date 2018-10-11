@@ -45,7 +45,7 @@ class ScheduleDetailController extends Controller
 
             if ($request->pwbno != null && $request->pwbno != '' ) {
                 # code...
-                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
+                $models = $models->where('schedule_details.pwbno','like','%'.$request->pwbno.'%');
             }
 
             if ($request->pwbname != null && $request->pwbname != '' ) {
@@ -60,7 +60,7 @@ class ScheduleDetailController extends Controller
 
             if ($request->process != null && $request->process != '' ) {
                 # code...
-                $models = $models->where('process','like','%'.$request->process.'%');
+                $models = $models->where('schedule_details.process','like','%'.$request->process.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
@@ -109,7 +109,7 @@ class ScheduleDetailController extends Controller
                 $cavityCode = substr($code, 14, 2 );
                 $cavityCode = (int) $cavityCode;
                 //10-12 lot number
-                $lotNo = substr($code, 17, 4);
+                $lotNo = substr($code, 16, 4);
                 //13-15 seq number
                 $seqNo = substr($code, 20,4);
                 $seqNo = $seqNo;
@@ -135,7 +135,7 @@ class ScheduleDetailController extends Controller
 
                 if ($cavityCode) {
                     
-                    $models = $models->where('models.cavity', '=', $cavityCode );
+                    $models = $models->where('models.cavity', '>=', $cavityCode );
                     // return $models->toSql();
                 }
 
