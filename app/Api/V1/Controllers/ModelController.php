@@ -14,21 +14,7 @@ class ModelController extends Controller
 {   
     public function index(Request $request){
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-    	$models = Mastermodel::select([
-            'models.id',
-            'name',
-            'pwbno',
-            'pwbname',
-            'process',
-            'cavity',
-            // DB::raw('concat(models.code , model_details.code) as code'),
-            'models.code',
-            'models.ynumber',
-            'side',
-            'model_id',
-            'prod_no',
-        ])
-        ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');    	
+    	$models = $this->getMaster();    	
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
                 # code...
@@ -70,6 +56,24 @@ class ModelController extends Controller
         ->orderBy('models.id','desc')
         ->paginate($limit);
     	return $models;
+    }
+
+    public function getMaster(){
+        return Mastermodel::select([
+            'model_details.id',
+            'name',
+            'pwbno',
+            'pwbname',
+            'process',
+            'cavity',
+            // DB::raw('concat(models.code , model_details.code) as code'),
+            'models.code',
+            'models.ynumber',
+            'side',
+            'model_id',
+            'prod_no',
+        ])
+        ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');
     }
 
     public function store(Request $request){
