@@ -91,13 +91,15 @@ class DashboardController extends Controller
                 models.pwbno = schedule_histories.pwbno and
                 models.process = schedule_histories.process and
                 model_details.prod_no = schedule_histories.prod_no
-            )') )->orWhere('schedule_histories.schedule_id', DB::raw('(select MAX(schedule_id) from schedule_histories where
+            )') );
+
+            /*$join->orWhere('schedule_histories.schedule_id', DB::raw('(select MAX(schedule_id) from schedule_histories where
                 models.name = schedule_details.model and
                 models.pwbname = schedule_details.pwbname and
                 models.pwbno = schedule_details.pwbno and
                 models.process = schedule_details.process and
                 model_details.prod_no = schedule_details.prod_no
-            )'));
+            )'));*/
         });
     }
 
