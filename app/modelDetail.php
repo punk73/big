@@ -26,7 +26,7 @@ class modelDetail extends Model
         $this->code = $code;
     }
 
-    public function generateCode($model_id){
+    public function generateCode(){
         $code = $this->prod_no;
         $this->code = $code;
     }
