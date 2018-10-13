@@ -215,31 +215,20 @@ class ScheduleDetailController extends Controller
 
         // return $masterScheduleId;
 
-        $scheduleDetail = $this->getJoinedSchedule()
+        /*$scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
-        ->where('schedule_details.qty', '>', 0 )
-        
-        // ->get();
-
-        // $result = [];
-        // foreach ($scheduleDetail as $key => $schedule) {
-        //     $schedule = json_decode(json_encode($schedule), true);
-        //     $result[] = $this->filterSchedule($schedule);
-        // }
-
-        // return $result;
-
-        ->chunk(300, function ($schedules) use (&$self, &$masterScheduleId ) {
+        ->where('schedule_details.qty', '>', 0 )*/
+        $scheduleDetail = $this->getUngeneratedCode();
+        // return $chunkCount;
+        $scheduleDetail->chunk( 300, function ($schedules) use (&$self, &$masterScheduleId ) {
             // for each disini, isi table yg dibawah bawahnya.
             $self->runProcess($schedules, $self, $masterScheduleId );
-            
-
             // changes object to array;
         });
 
         return [
             'success' => $scheduleDetail,
-            'count' => count($scheduleDetail),
+            'count' => $scheduleDetail->count('*'),
             'data'  => $scheduleDetail,
         ];
 
@@ -357,12 +346,11 @@ class ScheduleDetailController extends Controller
                 $masterModel->cavity = $schedule->cavity;
             }
 
-            if (!$masterModel->exists) {
+            if ( !$masterModel->exists ) {
                 #kalau belum ada aja di save nya. gausah update.
                 $masterModel->generateCode();
                 $masterModel->save();
             }
-
             // update schedule 
             if($masterModel->code != null){
                 $schedule->model_code = $masterModel->code;
@@ -374,14 +362,13 @@ class ScheduleDetailController extends Controller
                 'prod_no' => $schedule->prod_no 
             ]);
 
-            if(!$modelDetail->exists ){
+            if( !$modelDetail->exists ){
                 //model detail is new, not exists before
                 // codingnya ada di class model nya
-                $modelDetail->generateCode( $masterModel->id );
+                $modelDetail->generateCode();
                 //save model details
                 $modelDetail->save();
             }
-
             // cek details sudah ada belum.
             $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
                 'model_detail_id' => $modelDetail->id,
@@ -437,7 +424,6 @@ class ScheduleDetailController extends Controller
                     
                 }
             }
-
             // update every changes in schedule here.
             if ($masterModel->code != null) {
                 # code...
@@ -451,7 +437,7 @@ class ScheduleDetailController extends Controller
             }
             // save changes to schedule details table
             $schedule->save();
-
+            // return $schedule;
             // input schedule to history. parse object into array
             $newHistorySchedule = json_decode(json_encode($schedule), true);
             // filter schedule so that only contain shcedule data.
@@ -472,14 +458,18 @@ class ScheduleDetailController extends Controller
         }
     }
 
+    public function getUngeneratedCode(){
+        return $this->getJoinedSchedule()
+        ->where('models.code', '=', null ) //cek yang code nya masih null
+        ->orWhere('model_details.code', null ) //cek yang prod_no code nya masih null
+        ->orWhere('schedule_details.seq_start', null); //cek yg blm ada seq start & seq end nya.
+    }
+
     // function ini dipakai di function process.
     private function isGenerated(){
         // it'll return true or false, based on is there any schedule that has no code yet.
 
-        $ungeneratedSchedule = $this->getJoinedSchedule()
-        ->where('models.code', '=', null ) //cek yang code nya masih null
-        ->orWhere('model_details.code', null ) //cek yang prod_no code nya masih null
-        ->orWhere('schedule_details.seq_start', null) //cek yg blm ada seq start & seq end nya.
+        $ungeneratedSchedule = $this->getUngeneratedCode()
         ->exists();
 
         return !$ungeneratedSchedule; //kalau ini berisi, artinya masih ada yang belum di generate
@@ -494,6 +484,7 @@ class ScheduleDetailController extends Controller
 
         return [
             'is_generated'=> $isGenerated,
+            'count' => $this->getUngeneratedCode()->count('*'),
             'message'=> $message
         ];
     }
