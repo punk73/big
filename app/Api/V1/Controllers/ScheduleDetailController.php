@@ -15,7 +15,7 @@ use Dingo\Api\Exception\ResourceException;
 use Dingo\Api\Exception\UpdateResourceFailedException;
 use App\Api\V1\Requests\ScheduleDetailRequest;
 use App\Api\V1\Requests\ScheduleDetailProcessRequest;
-
+use App\Subtype;
 use Validator;
 use File;
 use Storage;
@@ -27,6 +27,7 @@ class ScheduleDetailController extends Controller
     protected $board_filename = 'board_id_schedule_';
     protected $cavity_filename = 'cavity_id_schedule_';
     protected $schedule_filename = 'schedule_code_';
+    protected $subtypeCode = '_';
 
     public function index(Request $request){
         $scheduleId = $this->getLatestScheduleId();
@@ -94,18 +95,18 @@ class ScheduleDetailController extends Controller
                 //cek if code <= 5 character. search di model.code
 
                 // substr(string, start, length )
-                $modelCode = substr($code, 0, 5); //ambil dari index 0, sebanyak 5 karakter.
+                $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
                 //char 6th must be i as country code
-                $countryCode = substr($code, 5, 1);
+                $countryCode = substr($code, 11, 1);
                 //7 must be A or B
-                $sideCode = substr($code, 6,1);
+                $sideCode = substr($code, 12,1);
                 //char 8-9 cavity. if model  still has no cavity, then 
-                $cavityCode = substr($code, 7, 2);
+                $cavityCode = substr($code, 14, 2 );
                 $cavityCode = (int) $cavityCode;
                 //10-12 lot number
-                $lotNo = substr($code, 9, 3);
+                $lotNo = substr($code, 17, 4);
                 //13-15 seq number
-                $seqNo = substr($code, 12,4);
+                $seqNo = substr($code, 20,4);
                 $seqNo = $seqNo;
 
                 // return [
@@ -225,135 +226,8 @@ class ScheduleDetailController extends Controller
 
         ->chunk(300, function ($schedules) use (&$self, &$masterScheduleId ) {
             // for each disini, isi table yg dibawah bawahnya.
-            $arraySchedule = [];
-            foreach ($schedules as $key => $schedule) {
-                //cek model sudah ada belum,
-                
-                $name = $schedule->model;
-                $pwbno = $schedule->pwbno;
-                $pwbname = $schedule->pwbname;
-                $process = $schedule->process;
-
-                $masterModel = Mastermodel::firstOrNew([
-                    'name' => $name,
-                    'pwbno' => $pwbno,
-                    'pwbname' => $pwbname,
-                    'process' => $process,
-                ]);
-
-                if (!$masterModel->exists) {
-                    #kalau belum ada aja di save nya. gausah update.
-                    $masterModel->generateCode();
-                    $masterModel->save();
-                }
-
-                // update schedule 
-                if($masterModel->code != null){
-                    $schedule->model_code = $masterModel->code;
-                }
-                
-                // cek model details sudah ada apa belum
-                $modelDetail = modelDetail::firstOrNew([
-                    'model_id'=> $masterModel->id,
-                    'prod_no' => $schedule->prod_no 
-                ]);
-
-                if(!$modelDetail->exists ){
-                    //model detail is new, not exists before
-                    // codingnya ada di class model nya
-                    $modelDetail->generateCode( $masterModel->id );
-                    //save model details
-                    $modelDetail->save();
-                }
-
-                // cek details sudah ada belum.
-                $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
-                    'model_detail_id' => $modelDetail->id,
-                    'start_serial' => $schedule->start_serial,
-                    'lot_size' => $schedule->lot_size,
-                    'schedule_id' => $masterScheduleId,
-                ]);
-
-                // cek apakah sudah ada sebelumnya, kalau belum ada, input. 
-                if ($detail->seq_start == null) {
-                    # add new
-                    // kalau belum ada, ya tambah
-                    if ($schedule->qty != 0) {
-                        # code...
-                        $detail->qty = $schedule->qty;
-                        $detail->seq_start = $self->toHexa(1);
-                        // seq end dikurang satu karena hitungan pertama itu diitung. 
-                        $seq_end = $self->toDecimal($detail->seq_start) + ($schedule->qty - 1);
-                        $detail->seq_end = $self->toHexa($seq_end) ;
-
-                        $detail->save();
-
-                        // update value schedule
-                        $schedule->seq_start = $detail->seq_start;
-                        $schedule->seq_end = $detail->seq_end;
-                        // $schedule->save();
-                    }
-                }else {
-                    if ($schedule->qty != 0) {
-                        //yg masuk kesini, artinya yang schedulenya dipecah. satu prod number, tp schedule 
-                        //nya dipisah pisah. that's why seq start nya ambil dari seq end record sebelumnya.
-                        
-                        // harus cek dulu apakah ini value nya beda atau memang data yg sebelumnya.
-                        // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
-                        $newSeqStart = $self->toHexa( $self->toDecimal($detail->seq_end) + 1 );
-                        $newSeqEnd = $self->toHexa( $self->toDecimal( $newSeqStart ) + ($schedule->qty - 1) );
-
-                        $newDetail = Detail::orderBy('id', 'desc' )->firstOrNew([
-                            'model_detail_id' => $modelDetail->id,
-                            'start_serial' => $schedule->start_serial,
-                            'lot_size' => $schedule->lot_size,
-                            'qty' => $schedule->qty,
-                            'seq_start' => $newSeqStart , //it's already hexadecimal
-                            'seq_end' => $newSeqEnd,
-                            'schedule_id' => $masterScheduleId,
-                        ]);
-
-                        $newDetail->save();
-
-                        // update value schedule
-                        $schedule->seq_start = $newDetail->seq_start;
-                        $schedule->seq_end = $newDetail->seq_end;
-                        
-                    }
-                }
-
-                // update every changes in schedule here.
-                if ($masterModel->code != null) {
-                    # code...
-                    $schedule->model_code = $masterModel->code;
-                    $schedule->cavity = $masterModel->cavity;
-                    $schedule->side = $masterModel->side;
-                }
-                //assign model_detail code into schedule;
-                if ($modelDetail->code!=null) {
-                    $schedule->prod_no_code = $modelDetail->code;
-                }
-                // save changes to schedule details table
-                $schedule->save();
-
-                // input schedule to history. parse object into array
-                $newHistorySchedule = json_decode(json_encode($schedule), true);
-                // filter schedule so that only contain shcedule data.
-                $newHistorySchedule = $this->filterSchedule($newHistorySchedule);
-                // assign into array schedule,
-                // kalau belum ada, insert into database
-                // ScheduleHistory::firstOrCreate($newHistorySchedule);
-                
-                $arraySchedule[] = $newHistorySchedule;
-                // if array schedule contain 50 records, send it to db.
-                if (count($arraySchedule) == 50 || $key == (count($schedules)-1) ) {
-                    # code...
-                    // insert into table history
-                    ScheduleHistory::insert($arraySchedule);
-                    //reset array schedule
-                    $arraySchedule = [];
-                }
-            }
+            $self->runProcess($schedules, $self, $masterScheduleId );
+            
 
             // changes object to array;
         });
@@ -450,6 +324,141 @@ class ScheduleDetailController extends Controller
         }
     }
 
+    public function runProcess($schedules, $self, $masterScheduleId){
+        $arraySchedule = [];
+        
+        foreach ($schedules as $key => $schedule) {
+            //cek model sudah ada belum,
+            
+            $name = $schedule->model;
+            $pwbno = $schedule->pwbno;
+            $pwbname = $schedule->pwbname;
+            $process = $schedule->process;
+            $ynumber = $schedule->ynumber;
+
+            $masterModel = Mastermodel::firstOrNew([
+                'name' => $name,
+                'pwbno' => $pwbno,
+                'pwbname' => $pwbname,
+                'process' => $process,
+                'ynumber' => $ynumber, 
+            ]);
+
+            if (!$masterModel->exists) {
+                #kalau belum ada aja di save nya. gausah update.
+                $masterModel->generateCode();
+                $masterModel->save();
+            }
+
+            // update schedule 
+            if($masterModel->code != null){
+                $schedule->model_code = $masterModel->code;
+            }
+            
+            // cek model details sudah ada apa belum
+            $modelDetail = modelDetail::firstOrNew([
+                'model_id'=> $masterModel->id,
+                'prod_no' => $schedule->prod_no 
+            ]);
+
+            if(!$modelDetail->exists ){
+                //model detail is new, not exists before
+                // codingnya ada di class model nya
+                $modelDetail->generateCode( $masterModel->id );
+                //save model details
+                $modelDetail->save();
+            }
+
+            // cek details sudah ada belum.
+            $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
+                'model_detail_id' => $modelDetail->id,
+                'start_serial' => $schedule->start_serial,
+                'lot_size' => $schedule->lot_size,
+                'schedule_id' => $masterScheduleId,
+            ]);
+
+            // cek apakah sudah ada sebelumnya, kalau belum ada, input. 
+            if ($detail->seq_start == null) {
+                # add new
+                // kalau belum ada, ya tambah
+                if ($schedule->qty != 0) {
+                    # code...
+                    $detail->qty = $schedule->qty;
+                    $detail->seq_start = $self->toHexa(1);
+                    // seq end dikurang satu karena hitungan pertama itu diitung. 
+                    $seq_end = $self->toDecimal($detail->seq_start) + ($schedule->qty - 1);
+                    $detail->seq_end = $self->toHexa($seq_end) ;
+
+                    $detail->save();
+
+                    // update value schedule
+                    $schedule->seq_start = $detail->seq_start;
+                    $schedule->seq_end = $detail->seq_end;
+                    // $schedule->save();
+                }
+            }else {
+                if ($schedule->qty != 0) {
+                    //yg masuk kesini, artinya yang schedulenya dipecah. satu prod number, tp schedule 
+                    //nya dipisah pisah. that's why seq start nya ambil dari seq end record sebelumnya.
+                    
+                    // harus cek dulu apakah ini value nya beda atau memang data yg sebelumnya.
+                    // sudah ada sebelumnya. jadi seq_start nya harus tambah dari counter sebelumnya.
+                    $newSeqStart = $self->toHexa( $self->toDecimal($detail->seq_end) + 1 );
+                    $newSeqEnd = $self->toHexa( $self->toDecimal( $newSeqStart ) + ($schedule->qty - 1) );
+
+                    $newDetail = Detail::orderBy('id', 'desc' )->firstOrNew([
+                        'model_detail_id' => $modelDetail->id,
+                        'start_serial' => $schedule->start_serial,
+                        'lot_size' => $schedule->lot_size,
+                        'qty' => $schedule->qty,
+                        'seq_start' => $newSeqStart , //it's already hexadecimal
+                        'seq_end' => $newSeqEnd,
+                        'schedule_id' => $masterScheduleId,
+                    ]);
+
+                    $newDetail->save();
+
+                    // update value schedule
+                    $schedule->seq_start = $newDetail->seq_start;
+                    $schedule->seq_end = $newDetail->seq_end;
+                    
+                }
+            }
+
+            // update every changes in schedule here.
+            if ($masterModel->code != null) {
+                # code...
+                $schedule->model_code = $masterModel->code;
+                $schedule->cavity = $masterModel->cavity;
+                $schedule->side = $masterModel->side;
+            }
+            //assign model_detail code into schedule;
+            if ($modelDetail->code!=null) {
+                $schedule->prod_no_code = $modelDetail->code;
+            }
+            // save changes to schedule details table
+            $schedule->save();
+
+            // input schedule to history. parse object into array
+            $newHistorySchedule = json_decode(json_encode($schedule), true);
+            // filter schedule so that only contain shcedule data.
+            $newHistorySchedule = $this->filterSchedule($newHistorySchedule);
+            // assign into array schedule,
+            // kalau belum ada, insert into database
+            // ScheduleHistory::firstOrCreate($newHistorySchedule);
+            
+            $arraySchedule[] = $newHistorySchedule;
+            // if array schedule contain 50 records, send it to db.
+            if (count($arraySchedule) == 50 || $key == (count($schedules)-1) ) {
+                # code...
+                // insert into table history
+                ScheduleHistory::insert($arraySchedule);
+                //reset array schedule
+                $arraySchedule = [];
+            }
+        }
+    }
+
     // function ini dipakai di function process.
     private function isGenerated(){
         // it'll return true or false, based on is there any schedule that has no code yet.
@@ -498,6 +507,7 @@ class ScheduleDetailController extends Controller
             'schedule_details.*',
 
             //models
+            'models.id as models_id',
             'models.name as models_name',
             'models.pwbname as models_pwbname',
             'models.pwbno as models_pwbno',
@@ -564,6 +574,7 @@ class ScheduleDetailController extends Controller
             'process',
             'rev_date',
             'qty',
+            'ynumber',
         ];
 
         foreach ($schedule as $key => $value) {
@@ -687,24 +698,59 @@ class ScheduleDetailController extends Controller
             for ($i= $seqStart; $i <= $seqEnd; $i++) { 
               // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
               $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-              $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+              $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
             }
         
         }else if($generatedType == 'cavity_id'){
+            // get subtypes
+            $subtypes = Subtype::select(['name'])->where('model_id', $schedule['models_id'] );
+            $subtypeIsExists = $subtypes->exists();
+            $subtypes = $subtypes->get();
+            
             for ($j=$seqStart; $j <= $seqEnd ; $j++) {     
                 for ($i=1; $i <= $cavity ; $i++) { 
-                    $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
-                    $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                    $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
-                    
+                    // kalau subtypes kosong
+                    if(!$subtypeIsExists){
+                        $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
+                        $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
+                        $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
+                    }else{
+                        for ($i=0; $i < count($subtypes) ; $i++) {
+                            $this->subtypeCode = $subtypes[$i]['name'];
+                            $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
+                            $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
+                            $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
+                        }
+                    }
                 }
             }
-        }else {
+        }
+        else {
+            // All;
+            $subtypes = Subtype::select(['name'])->where('model_id', $schedule['models_id'] );
+            $subtypeIsExists = $subtypes->exists();
+            $subtypes = $subtypes->get();
+
             for ($i=$seqStart; $i <= $seqEnd ; $i++) { 
                 for ($cav=0; $cav <= $cavity ; $cav++) { 
                     $cavityCode = str_pad( $cav , 2, '0', STR_PAD_LEFT );
                     $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-                    $content .= $modelCode . $countryCode . $side . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                    
+                    if(!$subtypeIsExists){
+                        $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
+                    }else {
+                        for ($l=0; $l < count($subtypes) ; $l++) { 
+                            $this->subtypeCode = $subtypes[$l]['name'];
+                            
+                            if( $cav == '00' ){ //kalau cavity == 0; artinya parent, dan parent harus selalu pake "_"
+                                $this->subtypeCode = '_';    
+                            }
+
+                            $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
+                                
+                        }
+                    }
+
                 }
             }
 
@@ -802,7 +848,11 @@ class ScheduleDetailController extends Controller
         fclose($fp);
     }
 
-
+    public function test(){
+        $masterModel = Mastermodel::first();
+        $masterModel->initCode();
+        return $masterModel;
+    }
 
 
 }

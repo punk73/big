@@ -77,15 +77,25 @@ $api->version('v1', function (Router $api) {
         $api->get('/download', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@downloadSchedule' );
 
         $api->get('/preprocess', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@preprocess' );
+        $api->get('/test', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@test' );
+        
         $api->get('/download/{id}', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@download' );
 
         $api->post('/process', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@process' );
         $api->post('/upload', 'App\\Api\\V1\\Controllers\\ScheduleDetailController@upload' );
+
     });
 
     $api->group(['prefix' => 'histories'], function(Router $api){
         $api->get('/', 'App\\Api\\V1\\Controllers\\HistoryController@index' );
         // $api->post('/process', 'App\\Api\\V1\\Controllers\\HistoryController@process' );
+    });
+
+    $api->group(['prefix' => 'subtypes'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\SubtypeController@index' );
+        $api->post('/', 'App\\Api\\V1\\Controllers\\SubtypeController@store' );
+        $api->put('/{id}', 'App\\Api\\V1\\Controllers\\SubtypeController@update' );
+        $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\SubtypeController@destroy' );
     });
     
 
