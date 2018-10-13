@@ -45,12 +45,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->pwbno != null && $request->pwbno != '' ) {
                 # code...
-                $models = $models->where('pwbno','like','%'.$request->pwbno.'%');
+                $models = $models->where('models.pwbno','like','%'.$request->pwbno.'%');
             }
 
             if ($request->pwbname != null && $request->pwbname != '' ) {
                 # code...
-                $models = $models->where('schedule_details.pwbname','like', $request->pwbname.'%');
+                $models = $models->where('models.pwbname','like', $request->pwbname.'%');
             }
 
             if ($request->side != null && $request->side != '' ) {
@@ -60,7 +60,7 @@ class ScheduleDetailController extends Controller
 
             if ($request->process != null && $request->process != '' ) {
                 # code...
-                $models = $models->where('process','like','%'.$request->process.'%');
+                $models = $models->where('models.process','like','%'.$request->process.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
@@ -70,12 +70,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->seq_start != null && $request->seq_start != '' ) {
                 # code...
-                $models = $models->where('seq_start','like','%'.$request->seq_start.'%');
+                $models = $models->where('schedule_details.seq_start','like','%'.$request->seq_start.'%');
             }
 
             if ($request->seq_end != null && $request->seq_end != '' ) {
                 # code...
-                $models = $models->where('seq_end','like','%'.$request->seq_end.'%');
+                $models = $models->where('schedule_details.seq_end','like','%'.$request->seq_end.'%');
             }
 
             if ($request->line != null && $request->line != '' ) {
