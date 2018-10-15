@@ -26,7 +26,11 @@ class DashboardController extends Controller
         // where clause;
         if(isset($request->dummy)){
             $dummy = new Dummy($request->dummy);
-            return $dummy;
+            $boards = $dummy->getBoards();
+            // return $boards;
+            if (!is_null($boards)) {
+                $request->code = $boards;
+            }
         }
 
         if(isset($request->code)){
