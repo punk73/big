@@ -66,7 +66,33 @@ return [
             'engine' => null,
         ],
 
-        'sqlsrv1' => [
+        'mysql2' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST2', '127.0.0.1'),
+            'port' => env('DB_PORT2', '3306'),
+            'database' => env('DB_DATABASE2', 'forge'),
+            'username' => env('DB_USERNAME2', 'forge'),
+            'password' => env('DB_PASSWORD2', ''),
+            'charset' => 'utf8',
+            'collation' => 'utf8_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
+        'sqlsrv2' => [
+            'driver' => 'sqlsrv',
+            // 'server' => env('DB_SERVER2', 'svrdbs\sa'),
+            'host' => env('DB_HOST2', '136.198.117.48'), 
+            'port' => env('DB_PORT2', '1433'),
+            'database' => env('DB_DATABASE2', 'forge'),
+            'username' => env('DB_USERNAME2', 'sa'),
+            'password' => env('DB_PASSWORD2', 'password'),
+            'prefix' => '',
+
+        ],
+
+        'sqlsrv' => [
             'driver' => 'sqlsrv',
             // 'server' => env('DB_SERVER2', 'svrdbs\sa'),
             'host' => env('DB_HOST', '136.198.117.48'), 

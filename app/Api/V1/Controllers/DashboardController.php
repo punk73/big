@@ -10,6 +10,8 @@ use App\Detail;
 use App\ScheduleHistory;
 use App\modelDetail;
 use DB;
+use App\Api\V1\Helper\Dummy;
+
 
 class DashboardController extends Controller
 {   
@@ -22,6 +24,11 @@ class DashboardController extends Controller
         $result = $this->getMasterModel();
 
         // where clause;
+        if(isset($request->dummy)){
+            $dummy = new Dummy($request->dummy);
+            return $dummy;
+        }
+
         if(isset($request->code)){
             // return $this->getCode();
             if(is_array($request->code)){
@@ -40,8 +47,6 @@ class DashboardController extends Controller
         if ($request->modelname != null && $request->modelname != '' ) {
             $result = $result->where('models.name','like','%'.$request->modelname.'%');
         }
-
-        
 
         $result = $result->paginate($limit);
 
