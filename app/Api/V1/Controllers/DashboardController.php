@@ -37,6 +37,12 @@ class DashboardController extends Controller
             }// return $result->toSql();
         }
 
+        if ($request->modelname != null && $request->modelname != '' ) {
+            $result = $result->where('models.name','like','%'.$request->modelname.'%');
+        }
+
+        
+
         $result = $result->paginate($limit);
 
         return $result;
