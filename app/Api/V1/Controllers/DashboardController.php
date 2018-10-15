@@ -124,7 +124,7 @@ class DashboardController extends Controller
         }
 
         $code = (is_null($paramCode)) ? $this->request->code : $paramCode ;
-        $modelCode = substr($code, 0, 11); 
+        /*$modelCode = substr($code, 0, 11); 
         
         $countryCode = substr($code, 12, 1);
         
@@ -135,7 +135,25 @@ class DashboardController extends Controller
         $lotNo = substr($code, 16, 4);
         
         $seqNo = substr($code, 20,4);
+        $seqNo = $seqNo;*/
+
+        // substr(string, start, length )
+        $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
+        
+        $subtypeCode = substr($code, 11, 1); // _ or N or whatever;
+
+        $cavityCode = substr($code, 12, 2 );
+        $cavityCode = (int) $cavityCode;
+
+        $sideCode = substr($code, 14,1);
+        
+        $countryCode = substr($code, 15, 1);
+        
+        $lotNo = substr($code, 16, 4);
+        
+        $seqNo = substr($code, 20,4);
         $seqNo = $seqNo;
+
 
         return [
             ['models.code', 'like', $modelCode.'%'],
