@@ -101,27 +101,30 @@ class ScheduleDetailController extends Controller
 
                 // substr(string, start, length )
                 $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
-                //char 6th must be i as country code
-                $countryCode = substr($code, 12, 1);
-                //7 must be A or B
-                $sideCode = substr($code, 13,1);
-                //char 8-9 cavity. if model  still has no cavity, then 
-                $cavityCode = substr($code, 14, 2 );
+                
+                $subtypeCode = substr($code, 11, 1); // _ or N or whatever;
+
+                $cavityCode = substr($code, 12, 2 );
                 $cavityCode = (int) $cavityCode;
-                //10-12 lot number
+
+                $sideCode = substr($code, 14,1);
+                
+                $countryCode = substr($code, 15, 1);
+                
                 $lotNo = substr($code, 16, 4);
-                //13-15 seq number
+                
                 $seqNo = substr($code, 20,4);
                 $seqNo = $seqNo;
 
-                // return [
-                //     'model_code' => $modelCode,
-                //     'country_code' => $countryCode,
-                //     'side_code' => $sideCode,
-                //     'cavity_code' => $cavityCode,
-                //     'lot_no' => $lotNo,
-                //     'seq_no' => $seqNo,
-                // ];
+                /*return [
+                    'model_code' => $modelCode,
+                    'subtypeCode' => $subtypeCode,
+                    'country_code' => $countryCode,
+                    'side_code' => $sideCode,
+                    'cavity_code' => $cavityCode,
+                    'lot_no' => $lotNo,
+                    'seq_no' => $seqNo,
+                ];*/
 
                 if ($modelCode) {
                     $models = $models->where('model_code', 'like', $modelCode.'%' );
@@ -228,7 +231,7 @@ class ScheduleDetailController extends Controller
 
         return [
             'success' => $scheduleDetail,
-            'count' => $scheduleDetail->count('*'),
+            'count' => count( $scheduleDetail),
             'data'  => $scheduleDetail,
         ];
 
@@ -487,7 +490,7 @@ class ScheduleDetailController extends Controller
 
         return [
             'is_generated'=> $isGenerated,
-            'count' => $this->getUngeneratedCode()->count('*'),
+            // 'count' => $this->getUngeneratedCode()->count('*'),
             'message'=> $message
         ];
     }
