@@ -18,12 +18,15 @@ class Dummy {
 	protected $guidname; //guid_master or guid_ticket;
 
 	public function __construct($dummy_id){
-
 		$this->dummy_id = $dummy_id;
-		$this->prefixCodeLength = env('previx_code', 5); //get env previx_code or 5 as default
-		$this->prefixCode = substr($this->dummy_id, 0, $this->prefixCodeLength );
-		$this->initModel();
+		if(strlen($this->dummy_id) < 24 ){
+			$this->prefixCodeLength = env('previx_code', 5); //get env previx_code or 5 as default
+			$this->prefixCode = substr($this->dummy_id, 0, $this->prefixCodeLength );
+			$this->initModel();
+		}else{
+			// defaultnya itu ini; board id langsung;
 
+		}
 	}
 
 	public function __toString(){
@@ -84,6 +87,10 @@ class Dummy {
 	}
 
 	public function getBoards(){
+		if(strlen( $this->dummy_id) >= 24 ){
+			return $this->dummy_id;
+		}
+
 		$guidName = $this->getGuidName();
 		$guids = $this->model
 			->select([
