@@ -9,6 +9,8 @@ use App\ScheduleDetail;
 use App\Detail;
 use App\ScheduleHistory;
 use App\modelDetail;
+use App\Master;
+use App\Board;
 use DB;
 use App\Api\V1\Helper\Dummy;
 
@@ -37,7 +39,7 @@ class DashboardController extends Controller
             }
         }
 
-        if(isset($request->model)){
+        /*if(isset($request->model)){
             $dummy = new Dummy($request->model);
             if($dummy->getDummyType() == 'model'){
                 $result = $result->where('models.name', 'like', $request->dummy . '%');
@@ -49,15 +51,29 @@ class DashboardController extends Controller
                     $request->code = $boards;
                 }
             }        
-        }
+        }*/
 
-        if(isset($request->serial_no) ){
+        if(isset($request->serial_no) && isset($request->model)){
+            $model = new Dummy($request->model);
+            
+            if($model->getDummyType() == 'model'){
+                $model = $model;
+            }
+
+            if($model->getDummyType() == 'master'){
+                $model = $model->getModelname($request->serial_no); // ??? how ??
+                // return $model;
+            }
+             
             // get board from master with serial_no = $request->serial_no;
             $masters = Master::select([
                 'guid_master'
-            ])->where('serial_no', 'like', '%'. $request->serial_no . '%' )
+            ])->where('serial_no', 'like', '%'. $request->serial_no )
+            ->where('serial_no', 'like', $model . '%' )
             ->groupBy('guid_master')
             ->get();
+
+            // return $masters;
 
             $arrayGuid = [];
             foreach ($masters as $key => $master) {
@@ -74,7 +90,7 @@ class DashboardController extends Controller
                 $arrayBoards[] = $board['board_id'];
             }
 
-
+            $request->code = $arrayBoards;
 
         }
 

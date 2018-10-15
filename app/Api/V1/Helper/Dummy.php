@@ -81,7 +81,7 @@ class Dummy {
 			}
 
 			$this->setDummyType('model');
-			
+
 		}
 		
 		$this->setDummyType(str_singular($setting->table_name));
@@ -126,5 +126,21 @@ class Dummy {
 			$arrayBoards[] = $board['board_id'];
 		}
 		return $arrayBoards;
+	}
+
+	public function getModelname($serial_no){
+		$master = Master::select('serial_no')
+			->where($this->dummyColumn, $this->dummy_id )
+			->where('serial_no', 'like', '%'. $serial_no )
+			->groupBy('serial_no')
+			->first();
+
+		if ($master) {
+		 	$model = explode(' ', $master['serial_no'] ) ;
+		 	return $model[0]; //
+		}
+
+		return ''; //empty string;
+
 	}
 }
