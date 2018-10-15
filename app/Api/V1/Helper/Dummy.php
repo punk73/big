@@ -5,6 +5,7 @@ use App\Ticket;
 use App\Master;
 use App\ColumnSetting;
 use App\Board;
+use App\Mastermodel;
 use Dingo\Api\Exception\StoreResourceFailedException;
 
 class Dummy {
@@ -14,18 +15,21 @@ class Dummy {
 	protected $boards;
 	protected $prefixCodeLength;
 	protected $prefixCode;
-	protected $dummyType; //ticket or master
+	protected $dummyType; //ticket or master or board or model
 	protected $guidname; //guid_master or guid_ticket;
 
 	public function __construct($dummy_id){
 		$this->dummy_id = $dummy_id;
+
 		if(strlen($this->dummy_id) < 24 ){
 			$this->prefixCodeLength = env('previx_code', 5); //get env previx_code or 5 as default
 			$this->prefixCode = substr($this->dummy_id, 0, $this->prefixCodeLength );
 			$this->initModel();
+			// it could be model too;
+			// what should we do here ??
 		}else{
 			// defaultnya itu ini; board id langsung;
-
+			$this->setDummyType('board');
 		}
 	}
 
@@ -68,9 +72,16 @@ class Dummy {
 		$setting = ColumnSetting::where('code_prefix', $this->prefixCode )->first();
 		
 		if(is_null($setting)){
-			throw new StoreResourceFailedException("ini tidak termasuk dummy master ataupun dummy tickets", [
-				'dummy' => json_decode($this)
-			]);
+			// check if it modelname;
+			$mastermodel = Mastermodel::where('name', 'like', $this->dummy_id )->first();
+			if(!$mastermodel){
+				throw new StoreResourceFailedException("ini tidak termasuk dummy master ataupun dummy tickets", [
+					'dummy' => json_decode($this)
+				]);
+			}
+
+			$this->setDummyType('model');
+			
 		}
 		
 		$this->setDummyType(str_singular($setting->table_name));

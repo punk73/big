@@ -26,12 +26,58 @@ class DashboardController extends Controller
         // where clause;
         if(isset($request->dummy)){
             $dummy = new Dummy($request->dummy);
-            $boards = $dummy->getBoards();
-            // return $boards;
-            if (!is_null($boards)) {
-                $request->code = $boards;
+            
+            if ( $dummy->getDummyType() == 'model' ) {
+                $result = $result->where('models.name', 'like', $request->dummy . '%');    
+            }else{
+                $boards = $dummy->getBoards();
+                if (!is_null($boards)) {
+                    $request->code = $boards;
+                }
             }
         }
+
+        if(isset($request->model)){
+            $dummy = new Dummy($request->model);
+            if($dummy->getDummyType() == 'model'){
+                $result = $result->where('models.name', 'like', $request->dummy . '%');
+            }
+
+            if($dummy->getDummyType() == 'master'){
+                $boards = $dummy->getBoards();
+                if (!is_null($boards)) {
+                    $request->code = $boards;
+                }
+            }        
+        }
+
+        if(isset($request->serial_no) ){
+            // get board from master with serial_no = $request->serial_no;
+            $masters = Master::select([
+                'guid_master'
+            ])->where('serial_no', 'like', '%'. $request->serial_no . '%' )
+            ->groupBy('guid_master')
+            ->get();
+
+            $arrayGuid = [];
+            foreach ($masters as $key => $master) {
+                $arrayGuid[] = $master['guid_master'];
+            }
+
+            $boards = Board::select(['board_id'])
+                ->whereIn('guid_master', $arrayGuid )
+                ->groupBy('board_id')
+                ->get();
+
+            $arrayBoards = [];
+            foreach ($boards as $key => $board) {
+                $arrayBoards[] = $board['board_id'];
+            }
+
+
+
+        }
+
 
         if(isset($request->code)){
             // return $this->getCode();
@@ -124,19 +170,6 @@ class DashboardController extends Controller
         }
 
         $code = (is_null($paramCode)) ? $this->request->code : $paramCode ;
-        /*$modelCode = substr($code, 0, 11); 
-        
-        $countryCode = substr($code, 12, 1);
-        
-        $sideCode = substr($code, 13,1);
-        
-        $cavityCode = substr($code, 14, 2 );
-        $cavityCode = (int) $cavityCode;
-        $lotNo = substr($code, 16, 4);
-        
-        $seqNo = substr($code, 20,4);
-        $seqNo = $seqNo;*/
-
         // substr(string, start, length )
         $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
         
