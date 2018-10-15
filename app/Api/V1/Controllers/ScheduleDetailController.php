@@ -45,12 +45,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->pwbno != null && $request->pwbno != '' ) {
                 # code...
-                $models = $models->where('schedule_details.pwbno','like','%'.$request->pwbno.'%');
+                $models = $models->where('models.pwbno','like','%'.$request->pwbno.'%');
             }
 
             if ($request->pwbname != null && $request->pwbname != '' ) {
                 # code...
-                $models = $models->where('schedule_details.pwbname','like', $request->pwbname.'%');
+                $models = $models->where('models.pwbname','like', $request->pwbname.'%');
             }
 
             if ($request->side != null && $request->side != '' ) {
@@ -60,7 +60,7 @@ class ScheduleDetailController extends Controller
 
             if ($request->process != null && $request->process != '' ) {
                 # code...
-                $models = $models->where('schedule_details.process','like','%'.$request->process.'%');
+                $models = $models->where('models.process','like','%'.$request->process.'%');
             }
 
             if ($request->lot_size != null && $request->lot_size != '' ) {
@@ -70,12 +70,12 @@ class ScheduleDetailController extends Controller
 
             if ($request->seq_start != null && $request->seq_start != '' ) {
                 # code...
-                $models = $models->where('seq_start','like','%'.$request->seq_start.'%');
+                $models = $models->where('schedule_details.seq_start','like','%'.$request->seq_start.'%');
             }
 
             if ($request->seq_end != null && $request->seq_end != '' ) {
                 # code...
-                $models = $models->where('seq_end','like','%'.$request->seq_end.'%');
+                $models = $models->where('schedule_details.seq_end','like','%'.$request->seq_end.'%');
             }
 
             if ($request->line != null && $request->line != '' ) {
@@ -346,11 +346,12 @@ class ScheduleDetailController extends Controller
                 $masterModel->cavity = $schedule->cavity;
             }
 
-            if ( !$masterModel->exists ) {
+            if (!$masterModel->exists) {
                 #kalau belum ada aja di save nya. gausah update.
                 $masterModel->generateCode();
                 $masterModel->save();
             }
+
             // update schedule 
             if($masterModel->code != null){
                 $schedule->model_code = $masterModel->code;
@@ -362,13 +363,14 @@ class ScheduleDetailController extends Controller
                 'prod_no' => $schedule->prod_no 
             ]);
 
-            if( !$modelDetail->exists ){
+            if(!$modelDetail->exists ){
                 //model detail is new, not exists before
                 // codingnya ada di class model nya
                 $modelDetail->generateCode();
                 //save model details
                 $modelDetail->save();
             }
+
             // cek details sudah ada belum.
             $detail = Detail::orderBy('id', 'desc' )->firstOrNew([
                 'model_detail_id' => $modelDetail->id,
@@ -424,6 +426,7 @@ class ScheduleDetailController extends Controller
                     
                 }
             }
+
             // update every changes in schedule here.
             if ($masterModel->code != null) {
                 # code...
@@ -437,7 +440,7 @@ class ScheduleDetailController extends Controller
             }
             // save changes to schedule details table
             $schedule->save();
-            // return $schedule;
+
             // input schedule to history. parse object into array
             $newHistorySchedule = json_decode(json_encode($schedule), true);
             // filter schedule so that only contain shcedule data.
@@ -704,7 +707,7 @@ class ScheduleDetailController extends Controller
             for ($i= $seqStart; $i <= $seqEnd; $i++) { 
               // code dibawah ini untuk padding. kalau $i == 1. jadi 001; dan seterusnya
               $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
-              $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+              $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
             }
         
         }else if($generatedType == 'cavity_id'){
@@ -719,13 +722,13 @@ class ScheduleDetailController extends Controller
                     if(!$subtypeIsExists){
                         $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                         $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                        $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
                     }else{
                         for ($i=0; $i < count($subtypes) ; $i++) {
                             $this->subtypeCode = $subtypes[$i]['name'];
                             $cavityCode = str_pad( $i , 2, '0', STR_PAD_LEFT );
                             $seqNo = str_pad( $this->toHexa($j) , 3, '0', STR_PAD_LEFT );
-                            $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
                         }
                     }
                 }
@@ -743,7 +746,7 @@ class ScheduleDetailController extends Controller
                     $seqNo = str_pad( $this->toHexa($i) , 3, '0', STR_PAD_LEFT );
                     
                     if(!$subtypeIsExists){
-                        $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                        $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
                     }else {
                         for ($l=0; $l < count($subtypes) ; $l++) { 
                             $this->subtypeCode = $subtypes[$l]['name'];
@@ -752,7 +755,7 @@ class ScheduleDetailController extends Controller
                                 $this->subtypeCode = '_';    
                             }
 
-                            $content .= $modelCode . $this->subtypeCode . $countryCode . $side  . $cavityCode . $lotNo . $seqNo.PHP_EOL;
+                            $content .= $modelCode . $this->subtypeCode . $cavityCode . $side . $countryCode   .  $lotNo . $seqNo.PHP_EOL;
                                 
                         }
                     }
