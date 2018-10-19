@@ -60,7 +60,7 @@ class ModelController extends Controller
 
     public function getMaster(){
         return Mastermodel::select([
-            'model_details.id',
+            'id', //'model_details.id',
             'name',
             'pwbno',
             'pwbname',
@@ -70,10 +70,10 @@ class ModelController extends Controller
             'models.code',
             'models.ynumber',
             'side',
-            'model_id',
-            'prod_no',
-        ])
-        ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');
+            // 'model_id',
+            // 'prod_no',
+        ]);
+        // ->leftJoin('model_details', 'models.id', '=', 'model_details.model_id');
     }
 
     public function store(Request $request){
