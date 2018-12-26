@@ -223,16 +223,22 @@ class ScheduleDetailController extends Controller
         ->where('schedule_details.qty', '>', 0 )*/
         $scheduleDetail = $this->getUngeneratedCode();
         // return $chunkCount;
-        $scheduleDetail->chunk( 300, function ($schedules) use (&$self, &$masterScheduleId ) {
+        /*$scheduleDetail->chunk( 300, function ($schedules) use (&$self, &$masterScheduleId ) {
             // for each disini, isi table yg dibawah bawahnya.
             $self->runProcess($schedules, $self, $masterScheduleId );
             // changes object to array;
-        });
+        });*/
+        do {
+            # code...
+            $schedules = $scheduleDetail->take(50)->get(); 
+
+            $this->runProcess($schedules, $this, $masterScheduleId );
+        } while (count($schedules) > 0); //selama schedules masih ada, terus looping
 
         return [
-            'success' => $scheduleDetail,
-            'count' => count( $scheduleDetail),
-            'data'  => $scheduleDetail,
+            'success' => $schedules,
+            'count' => count( $schedules),
+            'data'  => $schedules,
         ];
 
         // copy schedule_details into history
