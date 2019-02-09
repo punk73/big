@@ -31,7 +31,7 @@ class ScheduleDetailController extends Controller
     protected $schedule_filename = 'schedule_code_';
     protected $subtypeCode = '_';
 
-    public function index(Request $request){
+    public function indexBackup(Request $request){
         $scheduleId = $this->getLatestScheduleId();
 
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
@@ -180,6 +180,18 @@ class ScheduleDetailController extends Controller
 
     	$models = $models
         ->orderBy('schedule_details.id', 'desc')
+        ->paginate($limit);
+    	return $models;
+    }
+    public function index(Request $request){
+        $scheduleId = $this->getLatestScheduleId();
+
+    	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
+        $models = ScheduleDetail::where('schedule_id', $scheduleId )
+            ->orWhere('schedule_id', null );
+
+    	$models = $models
+        ->orderBy('id', 'desc')
         ->paginate($limit);
     	return $models;
     }
