@@ -12,6 +12,7 @@ use App\ScheduleHistory;
 use App\Api\V1\Controllers\CsvController;
 use App\Api\V1\Controllers\ScheduleController;
 use Dingo\Api\Exception\ResourceException;
+use Illuminate\Database\QueryException;
 use Dingo\Api\Exception\UpdateResourceFailedException;
 use App\Api\V1\Requests\ScheduleDetailRequest;
 use App\Api\V1\Requests\ScheduleDetailProcessRequest;
@@ -20,6 +21,7 @@ use Validator;
 use File;
 use Storage;
 use App\User;
+use DB;
 
 class ScheduleDetailController extends Controller
 {   
@@ -221,22 +223,30 @@ class ScheduleDetailController extends Controller
         /*$scheduleDetail = $this->getJoinedSchedule()
         ->where('schedule_details.seq_start', null )
         ->where('schedule_details.qty', '>', 0 )*/
-        $scheduleDetail = $this->getUngeneratedCode();
+        // $scheduleDetail = $this->getUngeneratedCode();
         // return $chunkCount;
         /*$scheduleDetail->chunk( 300, function ($schedules) use (&$self, &$masterScheduleId ) {
             // for each disini, isi table yg dibawah bawahnya.
             $self->runProcess($schedules, $self, $masterScheduleId );
             // changes object to array;
         });*/
-        do {
+        /* do {
             # code...
             $schedules = $scheduleDetail->take(50)->get(); 
 
             $this->runProcess($schedules, $this, $masterScheduleId );
-        } while (count($schedules) > 0); //selama schedules masih ada, terus looping
+        } while (count($schedules) > 0); //selama schedules masih ada, terus looping */
+        $isSuccess = true;
+        try {
+            //code...
+            $schedules = DB::select(' exec generate_bigs_code');
+        } catch ( QueryException $th) {
+            $isSuccess = false;
+            $schedules = [];
+        }
 
         return [
-            'success' => $schedules,
+            'success' => $isSuccess,
             'count' => count( $schedules),
             'data'  => $schedules,
         ];
