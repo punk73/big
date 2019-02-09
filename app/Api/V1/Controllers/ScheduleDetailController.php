@@ -190,6 +190,16 @@ class ScheduleDetailController extends Controller
         $models = ScheduleDetail::where('schedule_id', $scheduleId )
             ->orWhere('schedule_id', null );
 
+        $allReq = $request->all();
+        $allowedParam = $this->getTableColumns('schedule_details');
+        // return $allowedParam;
+        foreach ($allReq as $key => $req) {
+            if ($request->has($key) && in_array($key, $allowedParam )  ) {
+                $models = $models->where($key,'like','%'.$req.'%');
+            }
+        }
+        
+
     	$models = $models
         ->orderBy('id', 'desc')
         ->paginate($limit);
@@ -894,5 +904,9 @@ class ScheduleDetailController extends Controller
         return $masterModel;
     }
 
+    public function getTableColumns($table)
+    {
+        return DB::getSchemaBuilder()->getColumnListing($table);
+    }
 
 }
