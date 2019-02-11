@@ -194,7 +194,11 @@ class ScheduleDetailController extends Controller
 
         $allReq = $request->all();
         $allowedParam = $this->getTableColumns('schedule_details');
-        // return $allowedParam;
+        /*return [
+            'allowedParam'=>$allowedParam,
+            'allReq' => $allReq
+
+        ];*/
         foreach ($allReq as $key => $req) {
             if ($request->has($key) && in_array($key, $allowedParam )  ) {
                 $models = $models->where($key,'like','%'.$req.'%');
