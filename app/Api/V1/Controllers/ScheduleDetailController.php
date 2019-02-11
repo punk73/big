@@ -183,6 +183,7 @@ class ScheduleDetailController extends Controller
         ->paginate($limit);
     	return $models;
     }
+
     public function index(Request $request){
         $scheduleId = $this->getLatestScheduleId();
 
@@ -194,17 +195,79 @@ class ScheduleDetailController extends Controller
 
         $allReq = $request->all();
         $allowedParam = $this->getTableColumns('schedule_details');
-        /*return [
-            'allowedParam'=>$allowedParam,
-            'allReq' => $allReq
-
-        ];*/
+        
         foreach ($allReq as $key => $req) {
             if ($request->has($key) && in_array($key, $allowedParam )  ) {
                 $models = $models->where($key,'like','%'.$req.'%');
             }
         }
         
+         if ($request->code != null && $request->code != '' ) {
+                # code...
+                $code = $request->code;
+
+                //cek if code <= 5 character. search di model.code
+
+                // substr(string, start, length )
+                $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
+                
+                $subtypeCode = substr($code, 11, 1); // _ or N or whatever;
+
+                $cavityCode = substr($code, 12, 2 );
+                $cavityCode = (int) $cavityCode;
+
+                $sideCode = substr($code, 14,1);
+                
+                $countryCode = substr($code, 15, 1);
+                
+                $lotNo = substr($code, 16, 4);
+                
+                $seqNo = substr($code, 20,4);
+                $seqNo = $seqNo;
+
+                /*return [
+                    'model_code' => $modelCode,
+                    'subtypeCode' => $subtypeCode,
+                    'country_code' => $countryCode,
+                    'side_code' => $sideCode,
+                    'cavity_code' => $cavityCode,
+                    'lot_no' => $lotNo,
+                    'seq_no' => $seqNo,
+                ];*/
+
+                if ($modelCode) {
+                    $models = $models->where('model_code', 'like', $modelCode.'%' );
+                }
+
+                //country code diabaikan 
+
+                if ($sideCode) {
+                    $models = $models->where('side', 'like', $sideCode.'%' );
+                }
+
+                if ($cavityCode) {
+                    
+                    $models = $models->where('cavity', '>=', $cavityCode );
+                    // return $models->toSql();
+                }
+
+                if ($lotNo) {
+                    // ambil dari property si table schedule_details
+                    $models = $models->where('prod_no', 'like','%'.$lotNo.'%' );
+                }
+
+                if ($seqNo) {
+                    // ambil dari property si table schedule_details
+                    // ambil yang seq start >= parameter && seq_end <= parameter
+                    // kenapa? karena kita bandingkan column nya dengan value, bkn sebaliknya.
+
+                    $models = $models
+                    ->where('seq_start', '<=', $seqNo )
+                    ->where('seq_end', '>=', $seqNo );
+
+                }
+                // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
+            }  
 
     	$models = $models
         ->orderBy('id', 'desc')
