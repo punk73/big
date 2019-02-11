@@ -187,8 +187,10 @@ class ScheduleDetailController extends Controller
         $scheduleId = $this->getLatestScheduleId();
 
     	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-        $models = ScheduleDetail::where('schedule_id', $scheduleId )
-            ->orWhere('schedule_id', null );
+        $models = ScheduleDetail::where(function ($q) use($scheduleId) {
+            $q->where('schedule_id', $scheduleId );
+            $q->orWhere('schedule_id', null );
+        });
 
         $allReq = $request->all();
         $allowedParam = $this->getTableColumns('schedule_details');
@@ -202,7 +204,8 @@ class ScheduleDetailController extends Controller
 
     	$models = $models
         ->orderBy('id', 'desc')
-        ->paginate($limit);
+        ->paginate($limit)
+        ->appends( $request->query());;
     	return $models;
     }
 
