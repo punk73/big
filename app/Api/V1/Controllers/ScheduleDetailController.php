@@ -49,7 +49,7 @@ class ScheduleDetailController extends Controller
             }
         }
         
-         if ($request->code != null && $request->code != '' ) {
+         if ($request->has('code') ) {
                 # code...
                 $code = $request->code;
 
