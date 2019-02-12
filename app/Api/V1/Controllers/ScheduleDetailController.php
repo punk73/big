@@ -31,159 +31,6 @@ class ScheduleDetailController extends Controller
     protected $schedule_filename = 'schedule_code_';
     protected $subtypeCode = '_';
 
-    public function indexBackup(Request $request){
-        $scheduleId = $this->getLatestScheduleId();
-
-    	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
-        $models = $this->getJoinedSchedule();    
-
-        // return $this->getLatestScheduleId();
-
-        // Search Query
-            if ($request->name != null && $request->name != '' ) {
-                # code...
-                $models = $models->where('model','like','%'.$request->name.'%');
-            }
-
-            if ($request->pwbno != null && $request->pwbno != '' ) {
-                # code...
-                $models = $models->where('models.pwbno','like','%'.$request->pwbno.'%');
-            }
-
-            if ($request->pwbname != null && $request->pwbname != '' ) {
-                # code...
-                $models = $models->where('models.pwbname','like', $request->pwbname.'%');
-            }
-
-            if ($request->side != null && $request->side != '' ) {
-                # code...
-                $models = $models->where('models.side','like', $request->side.'%');
-            }
-
-            if ($request->process != null && $request->process != '' ) {
-                # code...
-                $models = $models->where('models.process','like','%'.$request->process.'%');
-            }
-
-            if ($request->lot_size != null && $request->lot_size != '' ) {
-                # code...
-                $models = $models->where('lot_size','like','%'.$request->lot_size.'%');
-            }
-
-            if ($request->seq_start != null && $request->seq_start != '' ) {
-                # code...
-                $models = $models->where('schedule_details.seq_start','like','%'.$request->seq_start.'%');
-            }
-
-            if ($request->seq_end != null && $request->seq_end != '' ) {
-                # code...
-                $models = $models->where('schedule_details.seq_end','like','%'.$request->seq_end.'%');
-            }
-
-            if ($request->line != null && $request->line != '' ) {
-                # code...
-                $models = $models->where('line','like','%'.$request->line.'%');
-            }
-
-            if ($request->rev_date != null && $request->rev_date != '' ) {
-                # code...
-                $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
-            }
-
-            if ($request->qty != null && $request->qty != '' ) {
-                # code...
-                $models = $models->where('schedule_details.qty','like', $request->qty.'%');
-            }
-
-            if ($request->code != null && $request->code != '' ) {
-                # code...
-                $code = $request->code;
-
-                //cek if code <= 5 character. search di model.code
-
-                // substr(string, start, length )
-                $modelCode = substr($code, 0, 11); //ambil dari index 0, sebanyak 5 karakter.
-                
-                $subtypeCode = substr($code, 11, 1); // _ or N or whatever;
-
-                $cavityCode = substr($code, 12, 2 );
-                $cavityCode = (int) $cavityCode;
-
-                $sideCode = substr($code, 14,1);
-                
-                $countryCode = substr($code, 15, 1);
-                
-                $lotNo = substr($code, 16, 4);
-                
-                $seqNo = substr($code, 20,4);
-                $seqNo = $seqNo;
-
-                /*return [
-                    'model_code' => $modelCode,
-                    'subtypeCode' => $subtypeCode,
-                    'country_code' => $countryCode,
-                    'side_code' => $sideCode,
-                    'cavity_code' => $cavityCode,
-                    'lot_no' => $lotNo,
-                    'seq_no' => $seqNo,
-                ];*/
-
-                if ($modelCode) {
-                    $models = $models->where('model_code', 'like', $modelCode.'%' );
-                }
-
-                //country code diabaikan 
-
-                if ($sideCode) {
-                    $models = $models->where('models.side', 'like', $sideCode.'%' );
-                }
-
-                if ($cavityCode) {
-                    
-                    $models = $models->where('models.cavity', '>=', $cavityCode );
-                    // return $models->toSql();
-                }
-
-                if ($lotNo) {
-                    // ambil dari property si table schedule_details
-                    $models = $models->where('prod_no_code', '<=', $lotNo );
-                }
-
-                if ($seqNo) {
-                    // ambil dari property si table schedule_details
-                    // ambil yang seq start >= parameter && seq_end <= parameter
-                    // kenapa? karena kita bandingkan column nya dengan value, bkn sebaliknya.
-
-                    $models = $models
-                    ->where('details.seq_start', '<=', $seqNo )
-                    ->where('details.seq_end', '>=', $seqNo );
-
-                }
-                // $models = $models->where('rev_date','like','%'.$request->rev_date.'%');
-            }      
-
-            if ($request->prod_no != null && $request->prod_no != '') {
-                $models = $models->where('model_details.prod_no', $request->prod_no );
-            }      
-        // End Search
-        
-        // it's mean to get only latest schedule id, but it make a bug;
-        // the first time we upload the file, no schedule details has schedule_id, so no record shown;
-        if ($scheduleId!= null) {
-            $checkExists = $this->getJoinedSchedule();
-            $checkExists = $checkExists->where('details.schedule_id', $scheduleId )->exists();
-            // cek dulu ini fresh upload bukan, kalo iya, maka gausah masuk kesini;
-            if($checkExists){
-                $models = $models->where('details.schedule_id', $scheduleId );
-            }
-        }
-
-    	$models = $models
-        ->orderBy('schedule_details.id', 'desc')
-        ->paginate($limit);
-    	return $models;
-    }
-
     public function index(Request $request){
         $scheduleId = $this->getLatestScheduleId();
 
@@ -303,31 +150,6 @@ class ScheduleDetailController extends Controller
             // return $scheduleDetail;
         }
         
-        // generate code
-        $self = $this;
-        
-        /*$masterSchedule = Schedule::select('id')->orderBy('id','desc')->first();
-        $masterScheduleId = $masterSchedule->id;*/
-        $masterScheduleId = $this->getLatestScheduleId();
-
-        // return $masterScheduleId;
-
-        /*$scheduleDetail = $this->getJoinedSchedule()
-        ->where('schedule_details.seq_start', null )
-        ->where('schedule_details.qty', '>', 0 )*/
-        // $scheduleDetail = $this->getUngeneratedCode();
-        // return $chunkCount;
-        /*$scheduleDetail->chunk( 300, function ($schedules) use (&$self, &$masterScheduleId ) {
-            // for each disini, isi table yg dibawah bawahnya.
-            $self->runProcess($schedules, $self, $masterScheduleId );
-            // changes object to array;
-        });*/
-        /* do {
-            # code...
-            $schedules = $scheduleDetail->take(50)->get(); 
-
-            $this->runProcess($schedules, $this, $masterScheduleId );
-        } while (count($schedules) > 0); //selama schedules masih ada, terus looping */
         $isSuccess = true;
         try {
             //code...
@@ -335,6 +157,11 @@ class ScheduleDetailController extends Controller
         } catch ( QueryException $th) {
             $isSuccess = false;
             $schedules = [];
+            return [
+                'success' => $isSuccess,
+                'count' => count( $schedules),
+                'data'  => $schedules,
+            ];
         }
 
         return [
@@ -581,13 +408,14 @@ class ScheduleDetailController extends Controller
 
     // function ini dipakai di function process.
     private function isGenerated(){
-        // it'll return true or false, based on is there any schedule that has no code yet.
+        $ungenerated = ScheduleDetail::where(function($q){
+            $q->whereNull('model_code');
+            $q->orWhereNull('prod_no_code');
+            $q->orWhereNull('seq_start');
+            $q->orWhereNull('seq_end');
+        })->exists();
 
-        $ungeneratedSchedule = $this->getUngeneratedCode()
-        ->exists();
-
-        return !$ungeneratedSchedule; //kalau ini berisi, artinya masih ada yang belum di generate
-        //artinya harusnya ini return null, atau sudah tidak ada.
+        return !$ungenerated;
     }
 
     public function preprocess(){
