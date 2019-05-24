@@ -189,6 +189,7 @@ class ModelController extends Controller
                     $process = $importedCsv[$i]['process'];
                     $cavity = (isset($importedCsv[$i]['cavity'])) ? $importedCsv[$i]['cavity'] : null ;
                     $side = (isset($importedCsv[$i]['side'])) ? $importedCsv[$i]['side'] : null ;
+                    $ynumber = (isset($importedCsv[$i]['ynumber'])) ? $importedCsv[$i]['ynumber'] : null ;
                     // cek apakah data sudah ada
                     //kalau ada, lewat. kalau engga masukin ke array baru.
                     $masterModel = Mastermodel::where('name',$name)
@@ -205,6 +206,7 @@ class ModelController extends Controller
                             'process' => $process,
                             'cavity' =>$cavity,
                             'side' =>$side,
+                            'ynumber' => $ynumber
                         ];
                     }
                     //kalau array baru sudah 1000 index atau udah diujung, kirim ke db.
