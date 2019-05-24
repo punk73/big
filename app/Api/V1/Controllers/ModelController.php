@@ -9,6 +9,7 @@ use Storage;
 use File;
 use App\Schedule;
 use App\ScheduleDetail;
+use App\Pso;
 
 class ModelController extends Controller
 {   
@@ -441,8 +442,38 @@ class ModelController extends Controller
     }
 
     public function test(){
-        $model = Mastermodel::all();
-        return $model;
+        $pso = new Pso;
+        return [
+            'create_time' => $pso->getCurrentCreateTime(),
+            'modelname'         => $this->getModelname()
+        ];
+
+    }
+
+    public function importPso() {
+        $pso = new Pso;
+        $pso->getCurrent()
+        ->whereIn('model_no', $this->getModelname() )
+        ->chunk(100, function ($model) {
+            
+        });
+    }
+
+    public function getModelname() {
+        $modelname = Mastermodel::select('name')
+        ->distinct()
+        ->get();
+
+        $result = [];
+        foreach ($modelname as $key => $name) {
+            # code...
+            if(!isset($name['name'])) {
+                continue;
+            }
+            $result[] = $name['name'];
+        }
+
+        return $result;
 
     }
 

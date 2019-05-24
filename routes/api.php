@@ -102,5 +102,8 @@ $api->version('v1', function (Router $api) {
         $api->delete('/{id}', 'App\\Api\\V1\\Controllers\\SubtypeController@destroy' );
     });
     
+    $api->group(['prefix' => 'test'], function(Router $api){
+        $api->get('/', 'App\\Api\\V1\\Controllers\\ModelController@test' );
+    });
 
 });

@@ -12,4 +12,25 @@ class Pso extends Model
 	}
 
     protected $table = 't_file';
+
+    public function getCurrent( $create_time = null ) {
+        if($create_time == null) {
+            $create_time = $this->getCurrentCreateTime();
+        }
+
+        return $this->where('create_time', $create_time );
+
+    }
+
+    public function getCurrentCreateTime() {
+        $result = $this->select('create_time')
+            ->orderBy('create_time', 'desc')
+            ->first();
+        
+        if($result != false) {
+            return $result['create_time'];
+        }
+
+        return null;
+    }
 }
