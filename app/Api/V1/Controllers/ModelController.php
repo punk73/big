@@ -10,6 +10,7 @@ use File;
 use App\Schedule;
 use App\ScheduleDetail;
 use App\Pso;
+use App\PsoLocal;
 
 class ModelController extends Controller
 {   
@@ -445,18 +446,28 @@ class ModelController extends Controller
         $pso = new Pso;
         return [
             'create_time' => $pso->getCurrentCreateTime(),
-            'modelname'         => $this->getModelname()
+            'modelname'         => $this->getModelname(),
+            'pso' => $this->importPso()
         ];
 
     }
 
     public function importPso() {
         $pso = new Pso;
-        $pso->getCurrent()
+        return $pso
+        ->getCurrent()
+        ->select([
+            'line_desc as line'
+            , 'model_no as model'
+            , 'lot_no as prod_no'
+            , 'start_serial'
+            , 'lot_qty as qty'
+        ])
         ->whereIn('model_no', $this->getModelname() )
         ->chunk(100, function ($model) {
-            
+            PsoLocal::firstOrCreate($model->toArray());
         });
+
     }
 
     public function getModelname() {

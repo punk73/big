@@ -13,6 +13,8 @@ class Pso extends Model
 
     protected $table = 't_file';
 
+    protected $primaryKey = 'create_time';
+
     public function getCurrent( $create_time = null ) {
         if($create_time == null) {
             $create_time = $this->getCurrentCreateTime();
