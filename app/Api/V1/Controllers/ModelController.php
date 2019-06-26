@@ -15,7 +15,8 @@ use App\PsoLocal;
 class ModelController extends Controller
 {   
     public function index(Request $request){
-    	$limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
+        $limit = (isset($request->limit) && $request->limit != '' ) ? $request->limit : 25 ;
+
     	$models = $this->getMaster();    	
         /*Search Query*/
             if ($request->name != null && $request->name != '' ) {
@@ -50,8 +51,8 @@ class ModelController extends Controller
 
             if ($request->code != null && $request->code != '' ) {
                 # code...
-                $models = $models->where('models.code','like', $request->code.'%')
-                ->orWhere('model_details.code', 'like', $request->code .'%');
+                $models = $models->where('models.code','like', $request->code.'%');
+                // ->orWhere('model_details.code', 'like', $request->code .'%');
             }
         /*End Search*/
     	$models = $models
