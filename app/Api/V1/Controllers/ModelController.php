@@ -109,11 +109,16 @@ class ModelController extends Controller
 	    	];
     	}
 
-    	$parameters = $this->getParameter($request);
-    
+        $parameters = $this->getParameter($request);
+        
+        // return $parameters;
+        $tmp = [];
     	foreach ($parameters as $key => $parameter) {
-    		$model->$key = (isset( $parameter) && $parameter != null ) ? $parameter : $model->$key ;
-    	}
+            $model->$key = (isset( $parameter) && $parameter != null ) ? $parameter : $model->$key ;
+            $tmp[] = $model->$key;
+        }
+        
+        // return $tmp;
 
     	$model->save();
         // delete generated txt file
